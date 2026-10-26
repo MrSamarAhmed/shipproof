@@ -8,15 +8,22 @@ import type {
 
 export type BusyAction = 'sample' | 'import';
 
+export interface ExportFeedback {
+  readonly message: string;
+  readonly error: boolean;
+}
+
 export interface DashboardOptions {
   readonly state: AppState;
   readonly ledger: Ledger;
   readonly error: string | null;
   readonly busyAction: BusyAction | null;
   readonly openMapperId: string | null;
+  readonly exportFeedback: ExportFeedback | null;
   readonly projectName: string;
   readonly onLoadSample: () => void;
   readonly onImportFile: (file: File) => void;
+  readonly onExport: () => void;
   readonly onToggleMapper: (requirementId: string) => void;
   readonly onAddMapping: (requirementId: string, testId: string) => void;
   readonly onRemoveMapping: (requirementId: string, testId: string) => void;
@@ -36,9 +43,11 @@ export function renderDashboard(root: HTMLElement, options: DashboardOptions): v
     buildHeader(
       options.state,
       options.busyAction,
+      options.exportFeedback,
       options.projectName,
       options.onLoadSample,
       options.onImportFile,
+      options.onExport,
     ),
     buildMain(options),
     buildFooter(),
@@ -49,9 +58,11 @@ export function renderDashboard(root: HTMLElement, options: DashboardOptions): v
 function buildHeader(
   state: AppState,
   busyAction: BusyAction | null,
+  exportFeedback: ExportFeedback | null,
   projectName: string,
   onLoadSample: () => void,
   onImportFile: (file: File) => void,
+  onExport: () => void,
 ): HTMLElement {
   const header = element('header', { className: 'site-header' });
   const brand = element('div', { className: 'brand' }, [
@@ -106,6 +117,48 @@ function buildHeader(
   }
   actions.append(fileLabel);
 
+  const exportBlock = element('div', { className: 'export-block' });
+  const exportDisabled = state.evidence === null || busyAction !== null;
+  const exportButton = element('button', {
+    className: 'button primary',
+    text: 'Export readiness report (JSON)',
+    attrs: {
+      type: 'button',
+      'data-focus-key': 'export-report',
+    },
+  });
+  exportButton.disabled = exportDisabled;
+  if (exportDisabled) {
+    exportButton.setAttribute('aria-describedby', 'export-note');
+  }
+  exportButton.addEventListener('click', onExport);
+  exportBlock.append(exportButton);
+
+  let exportNote: string | null = null;
+  if (state.evidence === null) {
+    exportNote = 'Load evidence to enable the JSON export.';
+  } else if (busyAction !== null) {
+    exportNote = 'Export is unavailable while evidence is loading.';
+  }
+  if (exportNote !== null) {
+    exportBlock.append(
+      element('p', {
+        className: 'export-note',
+        text: exportNote,
+        attrs: { id: 'export-note' },
+      }),
+    );
+  }
+  if (exportFeedback !== null) {
+    exportBlock.append(
+      element('p', {
+        className: `export-feedback${exportFeedback.error ? ' is-error' : ' is-success'}`,
+        text: exportFeedback.message,
+      }),
+    );
+  }
+
+  actions.append(exportBlock);
   header.append(actions);
   return header;
 }

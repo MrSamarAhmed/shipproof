@@ -39,7 +39,7 @@ Build mode: fast
   Learner check: Change a mapping in the app and confirm the status, reason, and counts update honestly; try a shared test and explain what the UI shows.
   Commit: `Add manual evidence mapping`
 
-- [ ] **4. Export the current readiness report as JSON**
+- [x] **4. Export the current readiness report as JSON**
   Becomes usable: A user can download `shipproof-readiness-report.json` containing the current source, summary, requirement statuses, linked checks, messages, gaps, schema version, timestamp, and limitations; mapping and import changes are reflected.
   Why now: The export closes the core journey and must be derived from the now-complete current state and shared ledger.
   PRD ref: `prd.md > JSON readiness export`; `prd.md > Required Verification` (13–14)

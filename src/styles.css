@@ -191,6 +191,32 @@ a {
   gap: 8px;
 }
 
+.export-block {
+  display: grid;
+  gap: 4px;
+}
+
+.export-note {
+  max-width: 30ch;
+  margin: 0;
+  color: var(--secondary);
+  font-size: 0.72rem;
+}
+
+.export-feedback {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.export-feedback.is-success {
+  color: var(--green);
+}
+
+.export-feedback.is-error {
+  color: var(--red);
+}
+
 .button {
   min-height: 40px;
   padding: 8px 14px;
@@ -709,6 +735,14 @@ a {
 
   .header-actions .button {
     width: 100%;
+  }
+
+  .export-block {
+    width: 100%;
+  }
+
+  .export-note {
+    max-width: none;
   }
 
   .panel {

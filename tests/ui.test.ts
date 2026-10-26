@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import allPassXml from '../fixtures/all-pass.junit.xml?raw';
 import gapsXml from '../fixtures/gaps.junit.xml?raw';
 import malformedXml from '../fixtures/malformed.junit.xml?raw';
+import type { ReadinessReport } from '../src/export';
 import { startApp } from '../src/main';
 
 function mount(): HTMLElement {
@@ -107,6 +108,16 @@ function removeLink(root: HTMLElement, id: string, testId: string): void {
   button.click();
 }
 
+function exportButton(root: HTMLElement): HTMLButtonElement {
+  const button = root.querySelector<HTMLButtonElement>(
+    '[data-focus-key="export-report"]',
+  );
+  if (button === null) {
+    throw new Error('Export button not found.');
+  }
+  return button;
+}
+
 describe('empty dashboard', () => {
   it('shows the exact empty-state message and three unverified requirements', () => {
     const root = mount();
@@ -189,7 +200,11 @@ describe('JUnit import', () => {
     expect(countValue(root, 'verified')).toBe('2');
     expect(countValue(root, 'failed')).toBe('0');
     expect(countValue(root, 'unverified')).toBe('1');
-    expect(root.querySelector('button.primary')).toBeNull();
+    expect(
+      Array.from(root.querySelectorAll('button')).some(
+        (node) => node.textContent === 'Load sample evidence',
+      ),
+    ).toBe(false);
   });
 
   it('shows a missing mapped test after importing a report without it', async () => {
@@ -404,5 +419,93 @@ describe('manual mapper', () => {
 
     expect(statusTexts(root)).toEqual(['VERIFIED', 'UNVERIFIED', 'UNVERIFIED']);
     expect(countValue(root, 'verified')).toBe('1');
+  });
+});
+
+describe('JSON export', () => {
+  it('stays disabled with a visible explanation until evidence is loaded', () => {
+    const root = mount();
+    const disabled = exportButton(root);
+
+    expect(disabled.disabled).toBe(true);
+    expect(disabled.getAttribute('aria-describedby')).toBe('export-note');
+    expect(root.textContent).toContain('Load evidence to enable the JSON export.');
+
+    loadSample(root);
+    const enabled = exportButton(root);
+
+    expect(enabled.disabled).toBe(false);
+    expect(enabled.hasAttribute('aria-describedby')).toBe(false);
+    expect(root.textContent).not.toContain(
+      'Load evidence to enable the JSON export.',
+    );
+  });
+
+  it('requests a download of the current state and reports it honestly', async () => {
+    const root = mount();
+    loadSample(root);
+
+    const urlApi = URL as unknown as {
+      createObjectURL?: (blob: Blob) => string;
+      revokeObjectURL?: (url: string) => void;
+    };
+    const originalCreate = urlApi.createObjectURL;
+    const originalRevoke = urlApi.revokeObjectURL;
+    let downloadName = '';
+    let blobText = '';
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        downloadName = this.download;
+      });
+    urlApi.createObjectURL = (blob) => {
+      void blob.text().then((text) => {
+        blobText = text;
+      });
+      return 'blob:shipproof-test';
+    };
+    urlApi.revokeObjectURL = () => {};
+
+    try {
+      exportButton(root).click();
+      await waitFor(() => blobText.length > 0);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    } finally {
+      clickSpy.mockRestore();
+      if (originalCreate === undefined) {
+        delete urlApi.createObjectURL;
+      } else {
+        urlApi.createObjectURL = originalCreate;
+      }
+      if (originalRevoke === undefined) {
+        delete urlApi.revokeObjectURL;
+      } else {
+        urlApi.revokeObjectURL = originalRevoke;
+      }
+    }
+
+    expect(downloadName).toBe('shipproof-readiness-report.json');
+    const report = JSON.parse(blobText) as ReadinessReport;
+    expect(report.metadata.schemaVersion).toBe('1.0');
+    expect(report.metadata.evidenceSource).toEqual({
+      kind: 'synthetic-sample',
+      filename: 'sample-auth.junit.xml',
+      synthetic: true,
+    });
+    expect(report.summary).toMatchObject({
+      totalRequirements: 3,
+      verified: 1,
+      failed: 1,
+      unverified: 1,
+    });
+    expect(root.textContent).toContain(
+      'Download requested: shipproof-readiness-report.json',
+    );
+    expect(document.getElementById('shipproof-live-status')?.textContent).toBe(
+      'Download requested: shipproof-readiness-report.json',
+    );
+    expect(document.activeElement?.getAttribute('data-focus-key')).toBe(
+      'export-report',
+    );
   });
 });

@@ -1,5 +1,6 @@
 import './styles.css';
 import { evaluateLedger } from './domain';
+import { EXPORT_FILENAME, serializeReadinessReport } from './export';
 import { MAX_JUNIT_BYTES, parseJUnitReport } from './junit';
 import type { AppState, Evidence } from './model';
 import { SAMPLE_FILENAME, SAMPLE_PROJECT_NAME, SAMPLE_XML } from './sample';
@@ -10,13 +11,18 @@ import {
   removeMapping,
   replaceEvidence,
 } from './state';
-import { renderDashboard, type BusyAction } from './ui';
+import {
+  renderDashboard,
+  type BusyAction,
+  type ExportFeedback,
+} from './ui';
 
 export function startApp(root: HTMLElement): void {
   let state: AppState = createInitialState();
   let error: string | null = null;
   let busyAction: BusyAction | null = null;
   let openMapperId: string | null = null;
+  let exportFeedback: ExportFeedback | null = null;
   let pendingFocus: string | null = null;
   let announcement = '';
   const live = liveRegion();
@@ -29,11 +35,13 @@ export function startApp(root: HTMLElement): void {
       error,
       busyAction,
       openMapperId,
+      exportFeedback,
       projectName: SAMPLE_PROJECT_NAME,
       onLoadSample: loadSample,
       onImportFile: (file) => {
         void importFile(file);
       },
+      onExport: exportReport,
       onToggleMapper: toggleMapper,
       onAddMapping: linkTest,
       onRemoveMapping: unlinkTest,
@@ -58,6 +66,40 @@ export function startApp(root: HTMLElement): void {
     target?.focus();
   }
 
+  function exportReport(): void {
+    if (state.evidence === null || busyAction !== null) {
+      return;
+    }
+
+    try {
+      const json = serializeReadinessReport(state, new Date().toISOString());
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = EXPORT_FILENAME;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      exportFeedback = {
+        message: `Download requested: ${EXPORT_FILENAME}`,
+        error: false,
+      };
+      announcement = `Download requested: ${EXPORT_FILENAME}`;
+    } catch (caught) {
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : 'The readiness report could not be generated.';
+      exportFeedback = { message, error: true };
+      announcement = `Export failed. ${message}`;
+    }
+
+    pendingFocus = 'export-report';
+    render();
+  }
+
   function toggleMapper(requirementId: string): void {
     openMapperId = openMapperId === requirementId ? null : requirementId;
     pendingFocus = `mapper-toggle-${requirementId}`;
@@ -77,6 +119,7 @@ export function startApp(root: HTMLElement): void {
     }
 
     error = null;
+    exportFeedback = null;
     const ledger = evaluateLedger(state);
     const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
     announcement = `Linked ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified.`;
@@ -87,6 +130,7 @@ export function startApp(root: HTMLElement): void {
   function unlinkTest(requirementId: string, testId: string): void {
     state = removeMapping(state, requirementId, testId);
     error = null;
+    exportFeedback = null;
     const ledger = evaluateLedger(state);
     const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
     announcement = `Removed the link from ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified.`;
@@ -108,6 +152,7 @@ export function startApp(root: HTMLElement): void {
     }
     busyAction = 'sample';
     error = null;
+    exportFeedback = null;
     render();
 
     try {
@@ -142,6 +187,7 @@ export function startApp(root: HTMLElement): void {
     }
     busyAction = 'import';
     error = null;
+    exportFeedback = null;
     render();
 
     try {
