@@ -24,6 +24,16 @@ function countValue(root: HTMLElement, status: string): string {
   return root.querySelector(`.count-${status} dd`)?.textContent ?? '';
 }
 
+function decisionVerdict(root: HTMLElement): string {
+  return root.querySelector('.decision-verdict')?.textContent ?? '';
+}
+
+function blockerIds(root: HTMLElement): string[] {
+  return Array.from(root.querySelectorAll('.blocker-id')).map(
+    (node) => node.textContent ?? '',
+  );
+}
+
 async function waitFor(check: () => boolean, attempts = 40): Promise<void> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (check()) {
@@ -133,6 +143,14 @@ describe('empty dashboard', () => {
     expect(countValue(root, 'failed')).toBe('0');
     expect(countValue(root, 'unverified')).toBe('3');
     expect(root.textContent).toContain('No linked test evidence.');
+    expect(decisionVerdict(root)).toBe('CANNOT VERIFY');
+    expect(root.querySelector('.decision')?.getAttribute('data-decision')).toBe(
+      'CANNOT_VERIFY',
+    );
+    expect(root.textContent).toContain(
+      'Load the sample evidence or import a JUnit XML report to begin evaluation.',
+    );
+    expect(blockerIds(root)).toEqual([]);
     expect(root.querySelector('button')?.textContent).toBe('Load sample evidence');
     expect(root.querySelector('input[type=file]')).not.toBeNull();
   });
@@ -155,6 +173,12 @@ describe('sample load', () => {
     expect(root.textContent).toContain('Assertion failure');
     expect(root.textContent).toContain('No linked test evidence.');
     expect(root.textContent).not.toContain('No evidence loaded yet.');
+    expect(decisionVerdict(root)).toBe('NOT READY');
+    expect(blockerIds(root)).toEqual(['REQ-002', 'REQ-003']);
+    expect(root.textContent).toContain('What blocks confidence');
+    expect(root.querySelector('.blocker-reason')?.textContent).toContain(
+      'reported an assertion failure',
+    );
   });
 
   it('moves focus to the ledger heading after loading', () => {
@@ -200,6 +224,11 @@ describe('JUnit import', () => {
     expect(countValue(root, 'verified')).toBe('2');
     expect(countValue(root, 'failed')).toBe('0');
     expect(countValue(root, 'unverified')).toBe('1');
+    expect(decisionVerdict(root)).toBe('NOT READY');
+    expect(blockerIds(root)).toEqual(['REQ-003']);
+    expect(root.querySelector('.blocker-reason')?.textContent).toBe(
+      'No linked test evidence.',
+    );
     expect(
       Array.from(root.querySelectorAll('button')).some(
         (node) => node.textContent === 'Load sample evidence',
@@ -339,6 +368,9 @@ describe('manual mapper', () => {
     expect(
       document.getElementById('shipproof-live-status')?.textContent,
     ).toContain('REQ-001 is now UNVERIFIED');
+    expect(
+      document.getElementById('shipproof-live-status')?.textContent,
+    ).toContain('Release decision: NOT READY');
 
     addLink(root, 'REQ-001', 'test_valid_credentials_succeed');
 
@@ -384,6 +416,26 @@ describe('manual mapper', () => {
     select.value = 'test_invalid_credentials_rejected';
     select.dispatchEvent(new Event('change', { bubbles: true }));
     expect(addButton?.disabled).toBe(false);
+  });
+
+  it('shows linked checks passed only when every requirement is verified', async () => {
+    const root = mount();
+    chooseFile(
+      root,
+      new File([allPassXml], 'all-pass.junit.xml', { type: 'application/xml' }),
+    );
+    await waitFor(() => statusTexts(root).join(',') === 'VERIFIED,VERIFIED,UNVERIFIED');
+    expect(decisionVerdict(root)).toBe('NOT READY');
+
+    openMapper(root, 'REQ-003');
+    addLink(root, 'REQ-003', 'test_valid_credentials_succeed');
+
+    expect(statusTexts(root)).toEqual(['VERIFIED', 'VERIFIED', 'VERIFIED']);
+    expect(decisionVerdict(root)).toBe('LINKED CHECKS PASSED');
+    expect(blockerIds(root)).toEqual([]);
+    expect(root.textContent).toContain(
+      'No requirement-level evidence gaps remain for the linked checks.',
+    );
   });
 
   it('shows a shared test in every requirement that links it', () => {
@@ -509,7 +561,13 @@ describe('JSON export', () => {
       verified: 1,
       failed: 1,
       unverified: 1,
+      decision: 'NOT_READY',
     });
+    expect(report.summary.blockers.map((blocker) => blocker.requirementId)).toEqual([
+      'REQ-002',
+      'REQ-003',
+    ]);
+    expect(decisionVerdict(root)).toBe('NOT READY');
     expect(root.textContent).toContain(
       'Download requested: shipproof-readiness-report.json',
     );

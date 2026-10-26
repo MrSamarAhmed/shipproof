@@ -1,8 +1,10 @@
 import type {
   AppState,
+  Blocker,
   CheckDetail,
   Gap,
   Ledger,
+  ReadinessDecision,
   Requirement,
   RequirementResult,
   Status,
@@ -179,6 +181,10 @@ function summarize(results: readonly RequirementResult[], hasEvidence: boolean):
     verified,
     failed,
     unverified,
+    decision: decisionFor(failed, unverified, hasEvidence),
+    blockers: results
+      .map(toBlocker)
+      .filter((blocker): blocker is Blocker => blocker !== null),
     readinessStatement: readinessStatement(
       totalRequirements,
       verified,
@@ -186,6 +192,32 @@ function summarize(results: readonly RequirementResult[], hasEvidence: boolean):
       unverified,
       hasEvidence,
     ),
+  };
+}
+
+function decisionFor(
+  failed: number,
+  unverified: number,
+  hasEvidence: boolean,
+): ReadinessDecision {
+  if (!hasEvidence) {
+    return 'CANNOT_VERIFY';
+  }
+  if (failed > 0 || unverified > 0) {
+    return 'NOT_READY';
+  }
+  return 'LINKED_CHECKS_PASSED';
+}
+
+function toBlocker(result: RequirementResult): Blocker | null {
+  if (result.status === 'VERIFIED') {
+    return null;
+  }
+  return {
+    requirementId: result.id,
+    title: result.title,
+    status: result.status,
+    reason: result.explanation,
   };
 }
 

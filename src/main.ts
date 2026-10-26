@@ -12,6 +12,7 @@ import {
   replaceEvidence,
 } from './state';
 import {
+  decisionLabel,
   renderDashboard,
   type BusyAction,
   type ExportFeedback,
@@ -128,7 +129,7 @@ export function startApp(root: HTMLElement): void {
     exportFeedback = null;
     const ledger = evaluateLedger(state);
     const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
-    announcement = `Linked ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified.`;
+    announcement = `Linked ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified. Release decision: ${decisionLabel(ledger.summary.decision)}.`;
     pendingFocus = `mapper-toggle-${requirementId}`;
     render();
   }
@@ -142,7 +143,7 @@ export function startApp(root: HTMLElement): void {
     exportFeedback = null;
     const ledger = evaluateLedger(state);
     const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
-    announcement = `Removed the link from ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified.`;
+    announcement = `Removed the link from ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified. Release decision: ${decisionLabel(ledger.summary.decision)}.`;
     pendingFocus = `mapper-toggle-${requirementId}`;
     render();
   }

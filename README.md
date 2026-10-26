@@ -1,6 +1,6 @@
 # ShipProof — Proof Before Done
 
-ShipProof is a local, browser-only evidence ledger for software completion claims. It maps explicit requirements to JUnit test results and reports each requirement as **VERIFIED**, **FAILED**, or **UNVERIFIED**.
+ShipProof is a local, browser-only evidence ledger for software completion claims. It maps explicit requirements to JUnit test results, reports each requirement as **VERIFIED**, **FAILED**, or **UNVERIFIED**, and turns those results into one release decision: **CANNOT VERIFY**, **NOT READY**, or **LINKED CHECKS PASSED**.
 
 The product exists for the gap between "the agent says it is done" and "there is evidence that it is done." A passing test suite elsewhere never proves an unrelated requirement. Only the checks explicitly linked to a requirement can verify it.
 
@@ -8,12 +8,13 @@ This is a proof of concept, not a hosted service.
 
 ## What it does
 
-- Opens on a fictional **Authentication** project with three requirements and no evidence loaded, so all three are UNVERIFIED.
-- Loads a clearly labeled **synthetic sample** JUnit report: one requirement VERIFIED, one FAILED, one UNVERIFIED.
+- Opens on a fictional **Authentication** project with three requirements and no evidence loaded, so the decision is **CANNOT VERIFY** and all three requirements are UNVERIFIED.
+- Loads a clearly labeled **synthetic sample** JUnit report: one requirement VERIFIED, one FAILED, one UNVERIFIED, and an overall **NOT READY** decision.
+- Shows **What blocks confidence** once evidence is loaded: every non-verified requirement with its status and reason, so the next action is not hidden in a count.
 - Imports a local JUnit XML report through the browser file picker. A valid report replaces the current evidence; a malformed or unsupported report leaves the previous state intact.
-- Lets you add and remove requirement-to-test links manually. Every change recomputes statuses through the same deterministic evaluator used by the dashboard and export.
+- Lets you add and remove requirement-to-test links manually. Every change recomputes statuses, blockers, and the release decision through the same deterministic evaluator used by the dashboard and export.
 - Preserves links across imports. A linked test that disappears from the new report becomes `MISSING` and remains visible and removable.
-- Exports the current state as `shipproof-readiness-report.json`, including provenance and limitations.
+- Exports the current state as `shipproof-readiness-report.json`, including the decision, blockers, provenance, and limitations.
 
 ShipProof never runs tests, uploads a report, calls a network API, or decides whether a test is relevant. Linking a test is a human assertion about relevance.
 
@@ -47,16 +48,17 @@ If a port is already occupied, Vite reports the conflict. Do not kill an unrelat
 
 ## Demo walkthrough
 
-1. Open the app. Confirm the message **"No evidence loaded yet. ShipProof cannot verify completion claims without supporting test results."**, three UNVERIFIED rows, and a disabled JSON export with a visible explanation.
-2. Choose **Load sample evidence**. The source is labeled **"Synthetic sample evidence — not a real test run"**.
+1. Open the app. Confirm **CANNOT VERIFY**, the message **"No evidence loaded yet. ShipProof cannot verify completion claims without supporting test results."**, three UNVERIFIED rows, guidance to load evidence, and a disabled JSON export with a visible explanation.
+2. Choose **Load sample evidence**. The source is labeled **"Synthetic sample evidence — not a real test run"** and the decision is **NOT READY** with two blockers.
    - REQ-001: VERIFIED — `test_valid_credentials_succeed` passed.
    - REQ-002: FAILED — `test_invalid_credentials_rejected` has an assertion failure with a synthetic message.
    - REQ-003: UNVERIFIED — no linked test exists, even though passing tests appear elsewhere.
-3. Open **Manage test links** on REQ-001 and remove its only passing link. REQ-001 becomes UNVERIFIED and the counts update immediately. Add the link back to restore VERIFIED. Linking the failing test to REQ-003 makes REQ-003 FAILED. A test linked to two requirements shows an **Also linked to** note in each mapper.
-4. Import `fixtures/all-pass.junit.xml`. Mappings are preserved and REQ-001/REQ-002 become VERIFIED. Import `fixtures/gaps.junit.xml` to see a mapped test become `MISSING` and skipped/errored tests remain unlinked but available in the mapper.
-5. Import `fixtures/malformed.junit.xml`. The error is announced and focused, and the previous evidence, source, mappings, and statuses remain unchanged.
-6. Choose **Export readiness report (JSON)**. The UI says **"Download requested: shipproof-readiness-report.json"**. A browser cannot confirm that a file was saved to disk, so the app deliberately does not claim it was.
-7. Inspect the downloaded JSON and compare its source, summary, requirement statuses, checks, and gaps with the dashboard.
+3. Open **Manage test links** on REQ-001 and remove its only passing link. REQ-001 becomes UNVERIFIED and the counts, blockers, and decision update immediately. Add the link back to restore VERIFIED. Linking the failing test to REQ-003 makes REQ-003 FAILED. A test linked to two requirements shows an **Also linked to** note in each mapper.
+4. Import `fixtures/all-pass.junit.xml`. Every test in that report passes, yet the decision is still **NOT READY** with counts **2 VERIFIED / 0 FAILED / 1 UNVERIFIED** because REQ-003 has no linked evidence. Open REQ-003's mapper and link `test_valid_credentials_succeed`; the decision becomes **LINKED CHECKS PASSED** with no blockers. Remove that link again to restore **NOT READY**.
+5. Import `fixtures/gaps.junit.xml` to see a mapped test become `MISSING` and skipped/errored tests remain unlinked but available in the mapper. Blocker reasons change with the evidence.
+6. Import `fixtures/malformed.junit.xml`. The error is announced and focused, and the previous evidence, source, mappings, statuses, blockers, and decision remain unchanged.
+7. Choose **Export readiness report (JSON)**. The UI says **"Download requested: shipproof-readiness-report.json"**. A browser cannot confirm that a file was saved to disk, so the app deliberately does not claim it was.
+8. Inspect the downloaded JSON and compare its source, summary decision, blockers, requirement statuses, checks, and gaps with the dashboard.
 
 Refreshing the page resets everything to the initial empty state. There is no persistence.
 
@@ -76,6 +78,18 @@ Consequences worth stating explicitly:
 - A FAILED requirement keeps its gap details; failure does not hide other missing or inconclusive evidence.
 - Unlinked tests never affect a requirement's status. They are available only in the mapper.
 - `VERIFIED` means the linked checks passed. It does not prove the application is correct, complete, or safe.
+
+## Release decision
+
+The requirement statuses reduce to one decision shown above the counts:
+
+1. **CANNOT VERIFY** — no evidence report is loaded.
+2. **NOT READY** — at least one requirement is FAILED or UNVERIFIED.
+3. **LINKED CHECKS PASSED** — every requirement is VERIFIED.
+
+A **What blocks confidence** list names every non-verified requirement, its status, and its reason once a report is loaded. In the empty state, the panel explains how to begin instead. The list is empty only when the decision is LINKED CHECKS PASSED. The labels are deliberately not "READY" or "APPROVED": a report of passing linked checks is not proof of correctness, completeness, authenticity, or test relevance.
+
+The decision and blockers are derived by the same evaluator as the requirement rows and are included in the JSON export.
 
 ## Supported JUnit XML subset
 
@@ -123,7 +137,8 @@ metadata: {
   evidenceSource: { kind, filename, synthetic }
 }
 summary: {
-  totalRequirements, verified, failed, unverified, readinessStatement
+  totalRequirements, verified, failed, unverified, decision, blockers,
+  readinessStatement
 }
 requirements: [{
   id, title, verificationRule: "all-linked-checks-pass",
@@ -139,6 +154,8 @@ Field notes:
 - `evidenceSource.kind` is `synthetic-sample` or `imported-junit`.
 - `synthetic` is `true` for the bundled sample or a report declaring `shipproof.synthetic=true`. It is `null` when authenticity is unknown, never an unsupported claim that the evidence is real.
 - `filename` always names the current report.
+- `summary.decision` is `CANNOT_VERIFY`, `NOT_READY`, or `LINKED_CHECKS_PASSED` under the rules above.
+- `summary.blockers` lists every non-verified requirement as `{ requirementId, title, status, reason }`; it is empty when all requirements are verified.
 - `checks[].outcome` is `PASS`, `FAIL`, `SKIPPED`, `ERROR`, or `MISSING`.
 - `checks[].message` is a string or `null`.
 - `gaps[].kind` is `NO_LINKED_TESTS`, `SKIPPED`, `ERROR`, or `MISSING`. A requirement-level no-links gap has `testId: null`.
@@ -181,6 +198,7 @@ There is exactly one current evidence report in memory. Requirements and mapping
 
 - Empty, sample, all-pass, missing, skipped, errored, and malformed evidence.
 - The full status precedence, including PASS + MISSING = UNVERIFIED.
+- Release-decision precedence, blocker contents, and the all-pass-but-unlinked case.
 - Atomic import replacement and mapping preservation.
 - Duplicate links, shared links, missing-link removal, and immediate recomputation.
 - Fixed-clock export contents and serialization.

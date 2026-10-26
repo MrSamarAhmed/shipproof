@@ -110,6 +110,106 @@ describe('bundled sample', () => {
   });
 });
 
+describe('release decision', () => {
+  it('cannot verify without evidence and lists every unevaluated requirement', () => {
+    const ledger = evaluateLedger(createInitialState());
+
+    expect(ledger.summary.decision).toBe('CANNOT_VERIFY');
+    expect(ledger.summary.blockers.map((blocker) => blocker.requirementId)).toEqual([
+      'REQ-001',
+      'REQ-002',
+      'REQ-003',
+    ]);
+    expect(ledger.summary.blockers.every((blocker) => blocker.status === 'UNVERIFIED')).toBe(
+      true,
+    );
+    expect(ledger.summary.blockers[0]?.reason).toBe('No test evidence loaded yet.');
+    expect(ledger.summary.blockers[2]?.reason).toBe(
+      'No test evidence loaded yet. No linked test evidence.',
+    );
+  });
+
+  it('is not ready when a linked assertion fails and another requirement is unverified', () => {
+    const parsed = parseJUnitReport(SAMPLE_XML);
+    const state: AppState = {
+      ...createInitialState(),
+      evidence: {
+        source: {
+          kind: 'synthetic-sample',
+          filename: 'sample-auth.junit.xml',
+          synthetic: true,
+        },
+        tests: parsed.tests,
+      },
+    };
+    const ledger = evaluateLedger(state);
+
+    expect(ledger.summary.decision).toBe('NOT_READY');
+    expect(ledger.summary.blockers.map((blocker) => blocker.requirementId)).toEqual([
+      'REQ-002',
+      'REQ-003',
+    ]);
+    expect(ledger.summary.blockers[0]).toMatchObject({
+      title: 'Invalid credentials are rejected',
+      status: 'FAILED',
+    });
+    expect(ledger.summary.blockers[0]?.reason).toContain(
+      'reported an assertion failure',
+    );
+    expect(ledger.summary.blockers[1]).toMatchObject({
+      title: 'Rate limiting is enforced',
+      status: 'UNVERIFIED',
+      reason: 'No linked test evidence.',
+    });
+  });
+
+  it('stays not ready when every test passes but one requirement has no links', () => {
+    const state = stateWith([
+      pass('test_valid_credentials_succeed'),
+      pass('test_invalid_credentials_rejected'),
+    ]);
+    const ledger = evaluateLedger(state);
+
+    expect(ledger.summary).toMatchObject({
+      verified: 2,
+      failed: 0,
+      unverified: 1,
+      decision: 'NOT_READY',
+    });
+    expect(ledger.summary.blockers).toEqual([
+      {
+        requirementId: 'REQ-003',
+        title: 'Rate limiting is enforced',
+        status: 'UNVERIFIED',
+        reason: 'No linked test evidence.',
+      },
+    ]);
+  });
+
+  it('passes only the linked checks when every requirement is verified', () => {
+    const state = stateWith(
+      [pass('a')],
+      [
+        { requirementId: 'REQ-001', testId: 'a' },
+        { requirementId: 'REQ-002', testId: 'a' },
+        { requirementId: 'REQ-003', testId: 'a' },
+      ],
+    );
+    const ledger = evaluateLedger(state);
+
+    expect(ledger.summary).toMatchObject({
+      verified: 3,
+      failed: 0,
+      unverified: 0,
+      decision: 'LINKED_CHECKS_PASSED',
+      blockers: [],
+    });
+    expect(ledger.summary.readinessStatement).toContain(
+      'This does not prove the application is correct beyond those checks.',
+    );
+  });
+});
+
 describe('status precedence', () => {
   it('verifies a requirement when every linked check passes', () => {
     const state = stateWith([pass('a')], [{ requirementId: 'REQ-001', testId: 'a' }]);

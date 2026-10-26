@@ -15,9 +15,9 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, `What "Working" Looks L
    - `REQ-001 — Authentication works`
    - `REQ-002 — Invalid credentials are rejected`
    - `REQ-003 — Rate limiting is enforced`
-2. No evidence is loaded yet. All three requirements display `UNVERIFIED` with the explanation that no test evidence has been loaded. A dashboard message reads: “No evidence loaded yet. ShipProof cannot verify completion claims without supporting test results.”
+2. No evidence is loaded yet. The release decision is `CANNOT VERIFY`; all three requirements display `UNVERIFIED` with the explanation that no test evidence has been loaded. A dashboard message reads: “No evidence loaded yet. ShipProof cannot verify completion claims without supporting test results.”
 3. Two primary actions are available: **Load sample evidence** and **Import JUnit XML**. No tutorial, onboarding wizard, or setup screen is added.
-4. **Load sample evidence** loads a clearly labeled synthetic JUnit report. Its fixed mappings resolve to `test_valid_credentials_succeed` (PASS) for REQ-001 and `test_invalid_credentials_rejected` (FAIL) for REQ-002. REQ-003 has no linked tests. The dashboard shows one VERIFIED, one FAILED, and one UNVERIFIED requirement.
+4. **Load sample evidence** loads a clearly labeled synthetic JUnit report. Its fixed mappings resolve to `test_valid_credentials_succeed` (PASS) for REQ-001 and `test_invalid_credentials_rejected` (FAIL) for REQ-002. REQ-003 has no linked tests. The dashboard shows one VERIFIED, one FAILED, and one UNVERIFIED requirement; the release decision is `NOT READY`, and the blocker list names REQ-002 and REQ-003 with their reasons.
 5. **Import JUnit XML** opens a file picker. A valid report becomes the current evidence source, existing explicit mappings are preserved and reconciled against the new report, absent test IDs are flagged `MISSING`, and all statuses are recomputed. A malformed report shows an error and leaves the previous valid state intact.
 6. The user inspects the summary, each requirement’s status and rationale, linked test IDs and outcomes, failure/error details, and evidence gaps.
 7. The user opens the manual mapper, adds or removes requirement-to-test links, and sees affected statuses recompute immediately from the current evidence and links.
@@ -29,7 +29,7 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, `What "Working" Looks L
 A single dashboard surface, with supporting panel/dialog interactions. No extra setup or onboarding screens.
 
 - **Header:** ShipProof wordmark and “Proof Before Done” tagline; sample project name; evidence-source label; primary actions: **Load sample evidence** (empty state only) and **Import JUnit XML**; **Export readiness report**; optional **Reset to sample** when time permits.
-- **Readiness summary:** compact counts for VERIFIED, FAILED, and UNVERIFIED, plus a plain-language readiness statement.
+- **Readiness summary:** one release decision — `CANNOT VERIFY`, `NOT READY`, or `LINKED CHECKS PASSED` — with its reason; compact counts for VERIFIED, FAILED, and UNVERIFIED; and, once evidence is loaded, a **What blocks confidence** list naming each non-verified requirement. `LINKED CHECKS PASSED` is used instead of "ready" to avoid overclaiming.
 - **Empty state:** the required “No evidence loaded yet…” message, the two evidence actions, and the three requirement rows at `UNVERIFIED`.
 - **Requirement list:** the visual center of the dashboard. Each row shows requirement ID, title, status label, one-sentence rationale, linked test IDs with normalized outcomes, failure/error details, and a clear mapping action.
 - **Evidence detail:** expands inline or in a panel to show linked checks, failure/error messages, skipped/missing/errored gaps, and whether the source is synthetic or imported.
@@ -90,6 +90,7 @@ A single dashboard surface, with supporting panel/dialog interactions. No extra 
 
 ### Reading the evidence dashboard
 
+- The dashboard shows the release decision in every state: `CANNOT VERIFY` before evidence, `NOT READY` while any requirement is FAILED or UNVERIFIED, and `LINKED CHECKS PASSED` only when every requirement is VERIFIED. In the empty state the panel explains how to begin; once evidence is loaded it lists the blockers.
 - The summary shows total requirements and counts of VERIFIED, FAILED, and UNVERIFIED. The counts always match the requirement rows.
 - The readiness statement reflects actual failures and evidence gaps. It never implies that a passing suite proves the whole feature or application correct.
 - Every requirement row shows:
@@ -141,7 +142,7 @@ Explicit resolution: REQ-002 with one PASS and one MISSING linked test is `UNVER
 - Export is enabled after evidence is loaded. In the empty state it is disabled with a clear explanation; the export does not invent an evidence source.
 - The report contains:
   - **Metadata:** product name ShipProof; ISO 8601 generation timestamp; schema version; evidence source (synthetic sample or imported JUnit XML); imported filename when applicable.
-  - **Summary:** total requirement count; VERIFIED, FAILED, and UNVERIFIED counts; a readiness statement that warns about actual failures and evidence gaps.
+  - **Summary:** total requirement count; VERIFIED, FAILED, and UNVERIFIED counts; the release decision and blockers; a readiness statement that warns about actual failures and evidence gaps.
   - **Requirement results:** stable ID and title; final status; explanation; explicit linked test IDs; normalized outcome for each linked test; failure/error message when available; unresolved missing, skipped, or errored gaps.
   - **Provenance and limitations:** statuses are computed deterministically from the current report and explicit mappings; VERIFIED means verified against linked checks, not proven correct in general; synthetic sample evidence is identified as synthetic and not a real test run.
 - The report is valid, machine-readable JSON with a documented, versioned schema. The schema version for this MVP is `1.0`.
@@ -181,6 +182,7 @@ Explicit resolution: REQ-002 with one PASS and one MISSING linked test is `UNVER
 - Requirements-file import, requirements editing, additional test formats, accounts, persistence, and deployment are out of the POC. — Learner decision.
 - Export is disabled until evidence exists; the report’s evidence source is always labeled synthetic sample or imported evidence. — Agent assumption, aligned with the required metadata.
 - Unlinked tests do not affect requirement statuses; they are visible only in the mapper. — Agent assumption derived from explicit-only mappings; documented as a limitation.
+- A single visible release decision and blocker list, derived from the same evaluator as the rows and export, with `LINKED CHECKS PASSED` rather than "ready." — Agent refinement of the readiness summary, covered by domain, export, and UI tests.
 - Reset to sample is a stretch, implemented only after the core journey is verified. — Learner instruction.
 
 ## What We're Building
@@ -189,7 +191,7 @@ Explicit resolution: REQ-002 with one PASS and one MISSING linked test is `UNVER
 - The exact empty state, sample-evidence action, and JUnit XML import behavior above.
 - A central deterministic status engine with automated tests for every rule and normalized outcome.
 - The manual add/remove mapper with immediate recomputation, duplicate prevention, missing-link preservation, and shared-test visibility.
-- A dashboard showing summary counts, readiness statement, requirement rows, evidence details, failures, gaps, and source labels.
+- A dashboard showing the release decision, blocker list, summary counts, readiness statement, requirement rows, evidence details, failures, gaps, and source labels.
 - A valid current-state JSON export with the required metadata, summary, requirement results, provenance, and limitations.
 - Explicit loading, empty, import-error, export-success, and missing/skipped/errored evidence states.
 - Accessible, responsive calm audit-ledger styling.
@@ -215,6 +217,8 @@ Automated tests and a hands-on review must demonstrate:
 13. Export is valid JSON with the correct schema version and provenance.
 14. Exported counts and statuses match the current dashboard state.
 15. Repeated demo runs produce the same sample statuses.
+16. The release decision and blocker list match the requirement rows: `CANNOT VERIFY` with no evidence, `NOT READY` for the sample and for an all-passing report that leaves REQ-003 unlinked, and `LINKED CHECKS PASSED` only after every requirement is verified.
+17. Exported decision and blockers match the visible dashboard in the same state.
 
 The build must also verify the import's empty-report, unsupported-structure, and ambiguous-duplicate handling; keyboard and status-label accessibility; and the absence of network calls in the demo path. Tests are run, observed, and recorded honestly; no unrun check is reported as passing.
 

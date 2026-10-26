@@ -331,6 +331,124 @@ a {
   margin-bottom: 10px;
 }
 
+.decision {
+  padding: 14px 16px;
+  margin: 4px 0 14px;
+  border: 1px solid var(--border);
+  border-left-width: 5px;
+  border-radius: 4px;
+}
+
+.decision-not-ready {
+  background: var(--red-bg);
+  border-color: var(--red-border);
+  border-left-color: var(--red);
+}
+
+.decision-cannot-verify {
+  background: var(--amber-bg);
+  border-color: var(--amber-border);
+  border-left-color: var(--amber);
+}
+
+.decision-linked-checks-passed {
+  background: var(--green-bg);
+  border-color: var(--green-border);
+  border-left-color: var(--green);
+}
+
+.decision-kicker {
+  margin: 0;
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.decision-verdict {
+  margin: 2px 0 6px;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.decision-not-ready .decision-verdict {
+  color: var(--red);
+}
+
+.decision-cannot-verify .decision-verdict {
+  color: var(--amber);
+}
+
+.decision-linked-checks-passed .decision-verdict {
+  color: var(--green);
+}
+
+.decision-reason {
+  margin: 0;
+}
+
+.decision-guidance,
+.decision-clear {
+  margin: 8px 0 0;
+  color: var(--secondary);
+  font-size: 0.9rem;
+}
+
+.decision-blockers {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.blockers-heading {
+  margin: 0 0 6px;
+  color: var(--secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.blocker-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.blocker {
+  padding-left: 10px;
+  border-left: 2px solid var(--border);
+}
+
+.blocker + .blocker {
+  margin-top: 8px;
+}
+
+.blocker-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.blocker-id {
+  color: var(--secondary);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.blocker-title {
+  font-weight: 600;
+}
+
+.blocker-reason {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+}
+
 .counts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

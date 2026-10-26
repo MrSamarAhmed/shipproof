@@ -1,10 +1,22 @@
 import type {
   AppState,
+  Blocker,
   CheckDetail,
   Ledger,
+  ReadinessDecision,
   RequirementResult,
   Status,
 } from './model';
+
+const DECISION_LABELS: Record<ReadinessDecision, string> = {
+  CANNOT_VERIFY: 'CANNOT VERIFY',
+  NOT_READY: 'NOT READY',
+  LINKED_CHECKS_PASSED: 'LINKED CHECKS PASSED',
+};
+
+export function decisionLabel(decision: ReadinessDecision): string {
+  return DECISION_LABELS[decision];
+}
 
 export type BusyAction = 'sample' | 'import';
 
@@ -259,6 +271,7 @@ function buildSummary(ledger: Ledger): HTMLElement {
       text: 'Readiness summary',
       attrs: { id: 'summary-heading' },
     }),
+    buildDecision(ledger),
   );
 
   const counts = element('dl', {
@@ -278,20 +291,83 @@ function buildSummary(ledger: Ledger): HTMLElement {
       ]),
     );
   }
-  section.append(counts);
-
   section.append(
+    counts,
     element('p', {
       className: 'count-total',
       text: `Total requirements: ${ledger.summary.totalRequirements}`,
     }),
-    element('p', {
-      className: 'readiness-statement',
-      text: ledger.summary.readinessStatement,
-    }),
   );
 
   return section;
+}
+
+function buildDecision(ledger: Ledger): HTMLElement {
+  const { summary } = ledger;
+  const panel = element('div', {
+    className: `decision decision-${summary.decision.toLowerCase().replaceAll('_', '-')}`,
+    attrs: { 'data-decision': summary.decision },
+  });
+
+  panel.append(
+    element('p', { className: 'decision-kicker', text: 'Release decision' }),
+    element('p', {
+      className: 'decision-verdict',
+      text: decisionLabel(summary.decision),
+    }),
+    element('p', {
+      className: 'readiness-statement decision-reason',
+      text: summary.readinessStatement,
+    }),
+  );
+
+  if (summary.decision === 'CANNOT_VERIFY') {
+    panel.append(
+      element('p', {
+        className: 'decision-guidance',
+        text: 'Load the sample evidence or import a JUnit XML report to begin evaluation.',
+      }),
+    );
+  } else if (summary.blockers.length > 0) {
+    panel.append(buildBlockers(summary.blockers));
+  } else {
+    panel.append(
+      element('p', {
+        className: 'decision-clear',
+        text: 'No requirement-level evidence gaps remain for the linked checks.',
+      }),
+    );
+  }
+
+  return panel;
+}
+
+function buildBlockers(blockers: readonly Blocker[]): HTMLElement {
+  const block = element('div', { className: 'decision-blockers' });
+  block.append(
+    element('h3', {
+      className: 'blockers-heading',
+      text: 'What blocks confidence',
+    }),
+  );
+  const list = element('ul', { className: 'blocker-list' });
+  for (const blocker of blockers) {
+    list.append(
+      element('li', { className: 'blocker' }, [
+        element('div', { className: 'blocker-head' }, [
+          element('span', { className: 'blocker-id', text: blocker.requirementId }),
+          element('span', { className: 'blocker-title', text: blocker.title }),
+          element('span', {
+            className: `status status-${blocker.status.toLowerCase()}`,
+            text: blocker.status,
+          }),
+        ]),
+        element('p', { className: 'blocker-reason', text: blocker.reason }),
+      ]),
+    );
+  }
+  block.append(list);
+  return block;
 }
 
 function buildRequirementList(options: DashboardOptions): HTMLElement {

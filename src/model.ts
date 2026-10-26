@@ -43,6 +43,18 @@ export interface AppState {
 
 export type Status = 'VERIFIED' | 'FAILED' | 'UNVERIFIED';
 
+export type ReadinessDecision =
+  | 'CANNOT_VERIFY'
+  | 'NOT_READY'
+  | 'LINKED_CHECKS_PASSED';
+
+export interface Blocker {
+  readonly requirementId: string;
+  readonly title: string;
+  readonly status: Exclude<Status, 'VERIFIED'>;
+  readonly reason: string;
+}
+
 export interface CheckDetail {
   readonly testId: string;
   readonly outcome: CheckOutcome;
@@ -73,6 +85,8 @@ export interface Summary {
   readonly verified: number;
   readonly failed: number;
   readonly unverified: number;
+  readonly decision: ReadinessDecision;
+  readonly blockers: readonly Blocker[];
   readonly readinessStatement: string;
 }
 

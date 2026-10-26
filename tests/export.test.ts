@@ -62,10 +62,35 @@ describe('readiness report', () => {
       verified: 1,
       failed: 1,
       unverified: 1,
+      decision: 'NOT_READY',
     });
+    expect(report.summary.blockers.map((blocker) => blocker.requirementId)).toEqual([
+      'REQ-002',
+      'REQ-003',
+    ]);
     expect(report.provenance.limitations[3]).toContain(
       'not a real test run',
     );
+  });
+
+  it('exports not-ready with one blocker when every test passes but a requirement is unlinked', () => {
+    const state = importedState(allPassXml, 'all-pass.junit.xml');
+    const report = buildReadinessReport(state, GENERATED_AT);
+
+    expect(report.summary).toMatchObject({
+      verified: 2,
+      failed: 0,
+      unverified: 1,
+      decision: 'NOT_READY',
+    });
+    expect(report.summary.blockers).toEqual([
+      {
+        requirementId: 'REQ-003',
+        title: 'Rate limiting is enforced',
+        status: 'UNVERIFIED',
+        reason: 'No linked test evidence.',
+      },
+    ]);
   });
 
   it('carries linked checks, failure messages, and gaps without alteration', () => {
@@ -119,6 +144,10 @@ describe('readiness report', () => {
       testId: 'test_invalid_credentials_rejected',
       kind: 'MISSING',
     });
+    expect(report.summary.decision).toBe('NOT_READY');
+    expect(report.summary.blockers[0]?.reason).toContain(
+      'missing: test_invalid_credentials_rejected',
+    );
   });
 
   it('distinguishes an imported report with an unknown authenticity from a declared synthetic one', () => {
@@ -187,5 +216,7 @@ describe('readiness report', () => {
     const parsed: unknown = JSON.parse(text);
     expect(parsed).toEqual(buildReadinessReport(state, GENERATED_AT));
     expect(text).toContain(`"schemaVersion": "${SCHEMA_VERSION}"`);
+    expect(text).toContain('"decision": "NOT_READY"');
+    expect(text).toContain('"requirementId": "REQ-003"');
   });
 });

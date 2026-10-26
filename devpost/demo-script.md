@@ -7,34 +7,38 @@ status: draft
 
 Target length: **2:45**, inside the live Devpost requirement of **1 to 3 minutes**. This is an action and evidence sheet, not narration. Write and speak your own words; this document does not supply a script.
 
+**The spine of the demo:** a report where every test case passes still produces **NOT READY**, because REQ-003 has no linked evidence. Linking a passing test changes the decision; removing the link changes it back. The decision is about evidence relevance, not suite pass rate.
+
 ## Before recording
 
 - Run `npm run dev` and open `http://127.0.0.1:5173` in a clean browser window.
+- Reload immediately before recording so the app is in the empty state with the original mappings.
 - Use a window with no bookmarks bar, other tabs, notifications, or personal files visible.
-- Have `fixtures/gaps.junit.xml` and `fixtures/malformed.junit.xml` ready in the file picker.
+- Have `fixtures/all-pass.junit.xml`, `fixtures/gaps.junit.xml`, and `fixtures/malformed.junit.xml` ready in the file picker.
 - Open a plain text editor for the exported JSON, sized so line numbers and file paths are not distracting.
-- Reload the app immediately before recording so it starts in the empty state.
-- Record at a readable zoom (100–125%) and keep the pointer movements deliberate.
+- Do **not** load the bundled sample first: this run needs the all-pass import to show the strongest contrast.
+- Record at a readable zoom (100–125%) and keep pointer movements deliberate.
 - No API keys, accounts, terminal history, or unrelated files should appear.
 
 ## Run of show
 
 | Time | Action on screen | Evidence that must be visible |
 | --- | --- | --- |
-| 0:00–0:10 | Start on the loaded app with no evidence. | “No evidence loaded yet,” all three requirements **UNVERIFIED**, export disabled with its visible explanation. |
-| 0:10–0:35 | Click **Load sample evidence**. | Source says synthetic sample; counts **1 VERIFIED / 1 FAILED / 1 UNVERIFIED**; REQ-002 shows its assertion-failure message; REQ-003 shows **No linked test evidence** while other tests pass. |
-| 0:35–0:55 | Open **Manage test links** on REQ-001, click **Remove link**, then add the same test back. | REQ-001 moves to **UNVERIFIED** and counts become 0/1/2; restoring the link returns it to **VERIFIED** and 1/1/1. The change is immediate. |
-| 0:55–1:20 | Click **Import JUnit XML** and choose `fixtures/gaps.junit.xml`. | Source filename changes; REQ-002 becomes **UNVERIFIED** because its linked test is **MISSING** and the link is preserved with a warning; counts are **1 / 0 / 2**. |
-| 1:20–1:40 | Open REQ-003's **Manage test links**, select `test_session_store_errors`, click **Add link**. | REQ-003 remains **UNVERIFIED** with an **ERROR** reason, not **FAILED**. Counts stay 1/0/2. |
-| 1:40–2:00 | Click **Import JUnit XML** and choose `fixtures/malformed.junit.xml`. | A clear “not well-formed XML” alert receives focus; the prior evidence, links, and counts remain unchanged. |
-| 2:00–2:30 | Click **Export readiness report (JSON)**, open the downloaded `shipproof-readiness-report.json` in the editor. | `schemaVersion` 1.0, evidence source `gaps.junit.xml`, summary 1/0/2, REQ-002's missing check, REQ-003's ERROR check, and the provenance/limitations text. |
-| 2:30–2:45 | Return to the dashboard and stop on the requirement rows. | The limited meaning of **VERIFIED**: only the explicitly linked checks passed; it is not a claim that the whole application is correct. |
+| 0:00–0:10 | Start on the app with no evidence. | Decision **CANNOT VERIFY**; all three requirements **UNVERIFIED**; guidance to load the sample or import a report; export disabled with its visible explanation. |
+| 0:10–0:35 | Click **Import JUnit XML** and choose `fixtures/all-pass.junit.xml`. | Source says imported evidence, declared synthetic. Decision **NOT READY**. Counts **2 VERIFIED / 0 FAILED / 1 UNVERIFIED**. The single blocker is REQ-003: **No linked test evidence.** Point out that every test case in the file passed. |
+| 0:35–0:55 | Open **Manage test links** on REQ-003, select `test_valid_credentials_succeed`, click **Add link**. | Decision changes to **LINKED CHECKS PASSED**; counts become **3 / 0 / 0**; the blocker list clears. The linked test shows PASS and an **Also linked to REQ-001** note. |
+| 0:55–1:10 | Click **Remove link** on that same test. | Decision returns to **NOT READY** and the REQ-003 blocker returns. The passing report did not change; only the explicit evidence link did. |
+| 1:10–1:35 | Click **Import JUnit XML** and choose `fixtures/gaps.junit.xml`. | Filename changes. REQ-002 becomes **UNVERIFIED** because its linked test is **MISSING**; the link remains visible with a warning. Counts are **1 / 0 / 2**. Decision stays **NOT READY** with updated blocker reasons. |
+| 1:35–1:55 | Click **Import JUnit XML** and choose `fixtures/malformed.junit.xml`. | A clear “not well-formed XML” alert receives focus. The previous source, links, counts, blockers, and decision remain unchanged. |
+| 1:55–2:25 | Click **Export readiness report (JSON)** and open `shipproof-readiness-report.json` in the editor. | `schemaVersion` 1.0; source `gaps.junit.xml`; `summary.decision` is `NOT_READY`; `summary.blockers` names the blocked requirements; REQ-002 has a MISSING check; provenance and limitations are present. |
+| 2:25–2:45 | Return to the dashboard and stop on the decision panel and blocker list. | The limited meaning of **LINKED CHECKS PASSED**: only the explicitly linked checks passed, not proof that the application is correct, complete, or authentic. |
 
-If a step runs long, drop the REQ-003 error-link step (1:20–1:40) rather than rushing the import or export. The required story is still intact without it.
+If a step runs long, drop the gaps import (1:10–1:35) rather than rushing the all-pass reveal, the malformed import, or the export. The decision then remains based on the all-pass report with REQ-003 unlinked, and the exported `NOT_READY` blocker still tells the story.
 
 ## After recording
 
-- Watch it once at normal speed. Confirm the status counts, failure reason, missing-link warning, alert, and JSON fields are readable without pausing.
+- Watch it once at normal speed. Confirm the decision label, blocker names, status counts, missing-link warning, malformed-import alert, and JSON decision/blockers are readable without pausing.
+- Confirm the all-pass contrast is unmistakable: everything passed, yet the decision was **NOT READY** until REQ-003 received relevant evidence.
 - Confirm no personal information, credentials, unrelated tabs, or notification pop-ups appear.
 - Upload it somewhere reviewers can open without signing in. Check the link in a private window before submitting.
 - Record the video URL and repository URL in `devpost/spec.md` under its sharing instructions once both exist.
