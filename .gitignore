@@ -1,0 +1,19 @@
+# Learning profile stays out of commits by default
+/devpost/learner-profile.md
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.DS_Store
+
+# Installed course and agent tooling (not part of the app)
+.agents/
+.claude/
+agent/
+skills-lock.json
