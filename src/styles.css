@@ -547,6 +547,125 @@ a {
   font-size: 0.78rem;
 }
 
+.mapper {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.mapper-toggle {
+  min-height: 34px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+
+.mapper-panel {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.mapper-panel > h3 {
+  margin-top: 14px;
+}
+
+.mapper-panel > h3:first-child {
+  margin-top: 0;
+}
+
+.mapper-link-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.mapper-link {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.mapper-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mapper-link-row code {
+  font-size: 0.8rem;
+}
+
+.mapper-note {
+  margin: 6px 0 0;
+  color: var(--secondary);
+  font-size: 0.76rem;
+}
+
+.mapper-note.warning {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.mapper-hint {
+  margin: 8px 0 0;
+  color: var(--secondary);
+  font-size: 0.76rem;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.select {
+  min-height: 40px;
+  max-width: 100%;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.mapper-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mapper-add-row .select {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.button.small {
+  min-height: 32px;
+  padding: 4px 10px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+}
+
+.button.danger {
+  background: var(--surface);
+  border: 1px solid var(--red-border);
+  color: var(--red);
+}
+
+.button.danger:hover:not(:disabled) {
+  background: var(--red-bg);
+}
+
 .muted {
   margin: 0;
   color: var(--secondary);
@@ -610,5 +729,10 @@ a {
 
   .count dd {
     font-size: 1.3rem;
+  }
+
+  .mapper-add-row .select,
+  .mapper-add-row .button {
+    width: 100%;
   }
 }

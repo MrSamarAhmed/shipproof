@@ -45,6 +45,68 @@ function chooseFile(root: HTMLElement, file: File): void {
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+function loadSample(root: HTMLElement): void {
+  const button = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find(
+    (node) => node.textContent === 'Load sample evidence',
+  );
+  if (button === undefined) {
+    throw new Error('Load sample button not found.');
+  }
+  button.click();
+}
+
+function requirement(root: HTMLElement, id: string): HTMLElement {
+  const article = Array.from(
+    root.querySelectorAll<HTMLElement>('.requirement'),
+  ).find((node) => node.querySelector('.requirement-id')?.textContent === id);
+  if (article === undefined) {
+    throw new Error(`Requirement ${id} not found.`);
+  }
+  return article;
+}
+
+function openMapper(root: HTMLElement, id: string): HTMLElement {
+  const toggle = requirement(root, id).querySelector<HTMLButtonElement>(
+    '.mapper-toggle',
+  );
+  if (toggle === null) {
+    throw new Error(`Mapper toggle for ${id} not found.`);
+  }
+  toggle.click();
+  return requirement(root, id);
+}
+
+function mapperSelect(article: HTMLElement): HTMLSelectElement {
+  const select = article.querySelector<HTMLSelectElement>('.mapper-panel select');
+  if (select === null) {
+    throw new Error('Mapper select not found.');
+  }
+  return select;
+}
+
+function addLink(root: HTMLElement, id: string, testId: string): void {
+  const select = mapperSelect(requirement(root, id));
+  select.value = testId;
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  const addButton = Array.from(
+    requirement(root, id).querySelectorAll<HTMLButtonElement>('.mapper-panel button'),
+  ).find((node) => node.textContent === 'Add link');
+  if (addButton === undefined) {
+    throw new Error('Add link button not found.');
+  }
+  addButton.click();
+}
+
+function removeLink(root: HTMLElement, id: string, testId: string): void {
+  const button = requirement(root, id).querySelector<HTMLButtonElement>(
+    `button[aria-label="Remove link to ${testId} from ${id}"]`,
+  );
+  if (button === null) {
+    throw new Error(`Remove button for ${testId} not found.`);
+  }
+  button.click();
+}
+
 describe('empty dashboard', () => {
   it('shows the exact empty-state message and three unverified requirements', () => {
     const root = mount();
@@ -127,7 +189,7 @@ describe('JUnit import', () => {
     expect(countValue(root, 'verified')).toBe('2');
     expect(countValue(root, 'failed')).toBe('0');
     expect(countValue(root, 'unverified')).toBe('1');
-    expect(root.querySelector('button')).toBeNull();
+    expect(root.querySelector('button.primary')).toBeNull();
   });
 
   it('shows a missing mapped test after importing a report without it', async () => {
@@ -214,5 +276,133 @@ describe('JUnit import', () => {
     expect(requirements[1]?.querySelector('.message')?.textContent).toContain(
       '<script>alert(1)</script>',
     );
+  });
+});
+
+describe('manual mapper', () => {
+  it('is unavailable before evidence is loaded', () => {
+    const root = mount();
+
+    expect(root.querySelector('.mapper-toggle')).toBeNull();
+    expect(root.querySelector('.mapper-panel')).toBeNull();
+  });
+
+  it('recomputes a status when the only passing link is removed and restored', () => {
+    const root = mount();
+    loadSample(root);
+    openMapper(root, 'REQ-001');
+
+    expect(
+      requirement(root, 'REQ-001')
+        .querySelector('.mapper-toggle')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('true');
+
+    removeLink(root, 'REQ-001', 'test_valid_credentials_succeed');
+
+    expect(statusTexts(root)).toEqual(['UNVERIFIED', 'FAILED', 'UNVERIFIED']);
+    expect(countValue(root, 'verified')).toBe('0');
+    expect(countValue(root, 'unverified')).toBe('2');
+    expect(requirement(root, 'REQ-001').textContent).toContain(
+      'No linked test evidence.',
+    );
+    expect(document.activeElement?.getAttribute('data-focus-key')).toBe(
+      'mapper-toggle-REQ-001',
+    );
+    expect(
+      document.getElementById('shipproof-live-status')?.textContent,
+    ).toContain('REQ-001 is now UNVERIFIED');
+
+    addLink(root, 'REQ-001', 'test_valid_credentials_succeed');
+
+    expect(statusTexts(root)).toEqual(['VERIFIED', 'FAILED', 'UNVERIFIED']);
+    expect(countValue(root, 'verified')).toBe('1');
+    expect(requirement(root, 'REQ-001').querySelector('.outcome')?.textContent).toBe(
+      'PASS',
+    );
+  });
+
+  it('marks a requirement failed when a linked test fails', () => {
+    const root = mount();
+    loadSample(root);
+    openMapper(root, 'REQ-003');
+
+    addLink(root, 'REQ-003', 'test_invalid_credentials_rejected');
+
+    expect(statusTexts(root)).toEqual(['VERIFIED', 'FAILED', 'FAILED']);
+    expect(countValue(root, 'failed')).toBe('2');
+    expect(requirement(root, 'REQ-003').textContent).toContain(
+      'Synthetic fixture: expected HTTP 401',
+    );
+    expect(
+      document.getElementById('shipproof-live-status')?.textContent,
+    ).toContain('REQ-003 is now FAILED');
+  });
+
+  it('offers only tests that are not already linked to the requirement', () => {
+    const root = mount();
+    loadSample(root);
+    const article = openMapper(root, 'REQ-001');
+    const select = mapperSelect(article);
+    const values = Array.from(select.options).map((option) => option.value);
+
+    expect(values).not.toContain('test_valid_credentials_succeed');
+    expect(values).toContain('test_invalid_credentials_rejected');
+
+    const addButton = Array.from(
+      article.querySelectorAll<HTMLButtonElement>('.mapper-panel button'),
+    ).find((node) => node.textContent === 'Add link');
+    expect(addButton?.disabled).toBe(true);
+
+    select.value = 'test_invalid_credentials_rejected';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(addButton?.disabled).toBe(false);
+  });
+
+  it('shows a shared test in every requirement that links it', () => {
+    const root = mount();
+    loadSample(root);
+    openMapper(root, 'REQ-003');
+    addLink(root, 'REQ-003', 'test_valid_credentials_succeed');
+
+    expect(statusTexts(root)).toEqual(['VERIFIED', 'FAILED', 'VERIFIED']);
+    expect(requirement(root, 'REQ-003').textContent).toContain(
+      'Also linked to REQ-001.',
+    );
+
+    openMapper(root, 'REQ-001');
+
+    expect(requirement(root, 'REQ-001').textContent).toContain(
+      'Also linked to REQ-003.',
+    );
+  });
+
+  it('keeps a missing link visible across imports and allows removing it', async () => {
+    const root = mount();
+
+    chooseFile(root, new File([gapsXml], 'gaps.junit.xml', { type: 'application/xml' }));
+    await waitFor(() => statusTexts(root).join(',') === 'VERIFIED,UNVERIFIED,UNVERIFIED');
+    openMapper(root, 'REQ-002');
+
+    expect(requirement(root, 'REQ-002').textContent).toContain(
+      'Not found in the current report. The link is preserved until you remove it.',
+    );
+
+    chooseFile(
+      root,
+      new File([allPassXml], 'all-pass.junit.xml', { type: 'application/xml' }),
+    );
+    await waitFor(() => statusTexts(root).join(',') === 'VERIFIED,VERIFIED,UNVERIFIED');
+    expect(requirement(root, 'REQ-002').textContent).toContain(
+      'test_invalid_credentials_rejected',
+    );
+    expect(requirement(root, 'REQ-002').querySelector('.outcome')?.textContent).toBe(
+      'PASS',
+    );
+
+    removeLink(root, 'REQ-002', 'test_invalid_credentials_rejected');
+
+    expect(statusTexts(root)).toEqual(['VERIFIED', 'UNVERIFIED', 'UNVERIFIED']);
+    expect(countValue(root, 'verified')).toBe('1');
   });
 });

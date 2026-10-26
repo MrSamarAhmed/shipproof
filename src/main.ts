@@ -3,13 +3,21 @@ import { evaluateLedger } from './domain';
 import { MAX_JUNIT_BYTES, parseJUnitReport } from './junit';
 import type { AppState, Evidence } from './model';
 import { SAMPLE_FILENAME, SAMPLE_PROJECT_NAME, SAMPLE_XML } from './sample';
-import { applyImportedReport, createInitialState, replaceEvidence } from './state';
+import {
+  addMapping,
+  applyImportedReport,
+  createInitialState,
+  removeMapping,
+  replaceEvidence,
+} from './state';
 import { renderDashboard, type BusyAction } from './ui';
 
 export function startApp(root: HTMLElement): void {
   let state: AppState = createInitialState();
   let error: string | null = null;
   let busyAction: BusyAction | null = null;
+  let openMapperId: string | null = null;
+  let pendingFocus: string | null = null;
   let announcement = '';
   const live = liveRegion();
 
@@ -20,17 +28,70 @@ export function startApp(root: HTMLElement): void {
       ledger,
       error,
       busyAction,
+      openMapperId,
       projectName: SAMPLE_PROJECT_NAME,
       onLoadSample: loadSample,
       onImportFile: (file) => {
         void importFile(file);
       },
+      onToggleMapper: toggleMapper,
+      onAddMapping: linkTest,
+      onRemoveMapping: unlinkTest,
     });
+
+    if (pendingFocus !== null) {
+      const key = pendingFocus;
+      pendingFocus = null;
+      focusByKey(key);
+    }
 
     if (announcement.length > 0) {
       live.textContent = announcement;
       announcement = '';
     }
+  }
+
+  function focusByKey(key: string): void {
+    const target = Array.from(
+      root.querySelectorAll<HTMLElement>('[data-focus-key]'),
+    ).find((node) => node.dataset.focusKey === key);
+    target?.focus();
+  }
+
+  function toggleMapper(requirementId: string): void {
+    openMapperId = openMapperId === requirementId ? null : requirementId;
+    pendingFocus = `mapper-toggle-${requirementId}`;
+    render();
+  }
+
+  function linkTest(requirementId: string, testId: string): void {
+    try {
+      state = addMapping(state, requirementId, testId);
+    } catch (caught) {
+      error =
+        caught instanceof Error ? caught.message : 'The test link could not be added.';
+      announcement = `Link not added. ${error}`;
+      render();
+      focusAlert();
+      return;
+    }
+
+    error = null;
+    const ledger = evaluateLedger(state);
+    const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
+    announcement = `Linked ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified.`;
+    pendingFocus = `mapper-toggle-${requirementId}`;
+    render();
+  }
+
+  function unlinkTest(requirementId: string, testId: string): void {
+    state = removeMapping(state, requirementId, testId);
+    error = null;
+    const ledger = evaluateLedger(state);
+    const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
+    announcement = `Removed the link from ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified.`;
+    pendingFocus = `mapper-toggle-${requirementId}`;
+    render();
   }
 
   function focusHeading(): void {

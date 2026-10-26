@@ -13,9 +13,13 @@ export interface DashboardOptions {
   readonly ledger: Ledger;
   readonly error: string | null;
   readonly busyAction: BusyAction | null;
+  readonly openMapperId: string | null;
   readonly projectName: string;
   readonly onLoadSample: () => void;
   readonly onImportFile: (file: File) => void;
+  readonly onToggleMapper: (requirementId: string) => void;
+  readonly onAddMapping: (requirementId: string, testId: string) => void;
+  readonly onRemoveMapping: (requirementId: string, testId: string) => void;
 }
 
 interface ElementOptions {
@@ -36,7 +40,7 @@ export function renderDashboard(root: HTMLElement, options: DashboardOptions): v
       options.onLoadSample,
       options.onImportFile,
     ),
-    buildMain(options.state, options.ledger, options.error, options.busyAction),
+    buildMain(options),
     buildFooter(),
   );
   root.append(shell);
@@ -133,12 +137,8 @@ function buildSource(state: AppState): HTMLElement {
   return block;
 }
 
-function buildMain(
-  state: AppState,
-  ledger: Ledger,
-  error: string | null,
-  busyAction: BusyAction | null,
-): HTMLElement {
+function buildMain(options: DashboardOptions): HTMLElement {
+  const { state, ledger, error, busyAction } = options;
   const main = element('main', { className: 'main' });
   const section = element('section', {
     className: 'panel ledger',
@@ -175,7 +175,7 @@ function buildMain(
   if (error !== null) {
     section.append(
       element('div', { className: 'alert', attrs: { role: 'alert', tabindex: '-1' } }, [
-        element('strong', { text: 'Import error: ' }),
+        element('strong', { text: 'Error: ' }),
         error,
       ]),
     );
@@ -190,7 +190,7 @@ function buildMain(
     );
   }
 
-  section.append(buildSummary(ledger), buildRequirementList(state, ledger));
+  section.append(buildSummary(ledger), buildRequirementList(options));
   main.append(section);
   return main;
 }
@@ -241,15 +241,19 @@ function buildSummary(ledger: Ledger): HTMLElement {
   return section;
 }
 
-function buildRequirementList(state: AppState, ledger: Ledger): HTMLElement {
+function buildRequirementList(options: DashboardOptions): HTMLElement {
   const list = element('ul', { className: 'requirement-list' });
-  for (const result of ledger.requirements) {
-    list.append(element('li', {}, [buildRequirement(state, result)]));
+  for (const result of options.ledger.requirements) {
+    list.append(element('li', {}, [buildRequirement(options, result)]));
   }
   return list;
 }
 
-function buildRequirement(state: AppState, result: RequirementResult): HTMLElement {
+function buildRequirement(
+  options: DashboardOptions,
+  result: RequirementResult,
+): HTMLElement {
+  const { state } = options;
   const article = element('article', {
     className: `requirement requirement-${result.status.toLowerCase()}`,
     attrs: { 'aria-labelledby': `req-${result.id}-title` },
@@ -320,12 +324,190 @@ function buildRequirement(state: AppState, result: RequirementResult): HTMLEleme
     article.append(
       element('p', {
         className: 'requirement-note',
-        text: 'No test result is shown because no evidence report is loaded.',
+        text: 'No test result is shown because no evidence report is loaded. Test links can be managed after evidence loads.',
       }),
     );
+  } else {
+    article.append(buildMapper(options, result));
   }
 
   return article;
+}
+
+function buildMapper(
+  options: DashboardOptions,
+  result: RequirementResult,
+): HTMLElement {
+  const { state } = options;
+  const isOpen = options.openMapperId === result.id;
+  const wrapper = element('div', { className: 'mapper' });
+
+  const toggleAttrs: Record<string, string> = {
+    type: 'button',
+    'aria-expanded': isOpen ? 'true' : 'false',
+    'data-focus-key': `mapper-toggle-${result.id}`,
+  };
+  if (isOpen) {
+    toggleAttrs['aria-controls'] = `mapper-${result.id}`;
+  }
+  const toggle = element('button', {
+    className: 'button secondary mapper-toggle',
+    text: isOpen ? 'Hide test links' : 'Manage test links',
+    attrs: toggleAttrs,
+  });
+  toggle.addEventListener('click', () => options.onToggleMapper(result.id));
+  wrapper.append(toggle);
+
+  if (!isOpen || state.evidence === null) {
+    return wrapper;
+  }
+
+  const panel = element('div', {
+    className: 'mapper-panel',
+    attrs: {
+      id: `mapper-${result.id}`,
+      role: 'group',
+      'aria-label': `Test links for ${result.id}`,
+    },
+  });
+
+  panel.append(element('h3', { text: 'Current links' }));
+  const checksById = new Map(result.checks.map((check) => [check.testId, check]));
+
+  if (result.linkedTestIds.length === 0) {
+    panel.append(element('p', { className: 'muted', text: 'No tests linked yet.' }));
+  } else {
+    const list = element('ul', { className: 'mapper-link-list' });
+    for (const testId of result.linkedTestIds) {
+      const check = checksById.get(testId);
+      const outcome = check?.outcome ?? 'MISSING';
+      const row = element('li', { className: 'mapper-link' });
+      row.append(
+        element('div', { className: 'mapper-link-row' }, [
+          element('code', { className: 'mono', text: testId }),
+          element('span', {
+            className: `outcome outcome-${outcome.toLowerCase()}`,
+            text: outcome,
+          }),
+        ]),
+      );
+
+      if (outcome === 'MISSING') {
+        row.append(
+          element('p', {
+            className: 'mapper-note warning',
+            text: 'Not found in the current report. The link is preserved until you remove it.',
+          }),
+        );
+      }
+
+      const shared = otherRequirementIds(state, result.id, testId);
+      if (shared.length > 0) {
+        row.append(
+          element('p', {
+            className: 'mapper-note',
+            text: `Also linked to ${shared.join(', ')}.`,
+          }),
+        );
+      }
+
+      const remove = element('button', {
+        className: 'button small danger',
+        text: 'Remove link',
+        attrs: {
+          type: 'button',
+          'data-focus-key': `mapper-remove-${result.id}`,
+        },
+      });
+      remove.setAttribute(
+        'aria-label',
+        `Remove link to ${testId} from ${result.id}`,
+      );
+      remove.addEventListener('click', () =>
+        options.onRemoveMapping(result.id, testId),
+      );
+      row.append(remove);
+      list.append(row);
+    }
+    panel.append(list);
+  }
+
+  panel.append(element('h3', { text: 'Add a link' }));
+  const linked = new Set(result.linkedTestIds);
+  const available = state.evidence.tests.filter((test) => !linked.has(test.id));
+  const selectId = `mapper-select-${result.id}`;
+  const fieldLabel = element('label', {
+    className: 'field-label',
+    text: `Test from the current report for ${result.id}`,
+    attrs: { for: selectId },
+  });
+  const select = element('select', {
+    className: 'select',
+    attrs: {
+      id: selectId,
+      'data-focus-key': `mapper-select-${result.id}`,
+    },
+  });
+  select.append(
+    element('option', {
+      text:
+        available.length === 0
+          ? 'All report tests are already linked'
+          : 'Choose a test',
+      attrs: { value: '' },
+    }),
+  );
+  for (const test of available) {
+    select.append(
+      element('option', {
+        text: `${test.id} — ${test.outcome}`,
+        attrs: { value: test.id },
+      }),
+    );
+  }
+  select.disabled = available.length === 0;
+
+  const addButton = element('button', {
+    className: 'button primary',
+    text: 'Add link',
+    attrs: {
+      type: 'button',
+      'data-focus-key': `mapper-add-${result.id}`,
+    },
+  });
+  addButton.disabled = true;
+  select.addEventListener('change', () => {
+    addButton.disabled = select.value === '';
+  });
+  addButton.addEventListener('click', () => {
+    if (select.value !== '') {
+      options.onAddMapping(result.id, select.value);
+    }
+  });
+
+  panel.append(
+    fieldLabel,
+    element('div', { className: 'mapper-add-row' }, [select, addButton]),
+    element('p', {
+      className: 'mapper-hint',
+      text: 'Linking is a human assertion that the test is relevant. Statuses recompute immediately from the current report.',
+    }),
+  );
+  wrapper.append(panel);
+  return wrapper;
+}
+
+function otherRequirementIds(
+  state: AppState,
+  requirementId: string,
+  testId: string,
+): string[] {
+  return state.mappings
+    .filter(
+      (mapping) =>
+        mapping.testId === testId && mapping.requirementId !== requirementId,
+    )
+    .map((mapping) => mapping.requirementId);
 }
 
 function buildCheck(check: CheckDetail): HTMLElement {

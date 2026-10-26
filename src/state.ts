@@ -30,3 +30,45 @@ export function applyImportedReport(
   };
   return replaceEvidence(state, evidence);
 }
+
+export function addMapping(
+  state: AppState,
+  requirementId: string,
+  testId: string,
+): AppState {
+  if (!state.requirements.some((requirement) => requirement.id === requirementId)) {
+    throw new Error(`Unknown requirement "${requirementId}".`);
+  }
+  if (state.evidence === null) {
+    throw new Error('Load test evidence before linking tests.');
+  }
+  if (!state.evidence.tests.some((test) => test.id === testId)) {
+    throw new Error(`Test "${testId}" is not in the current report.`);
+  }
+  if (
+    state.mappings.some(
+      (mapping) =>
+        mapping.requirementId === requirementId && mapping.testId === testId,
+    )
+  ) {
+    throw new Error(`Test "${testId}" is already linked to ${requirementId}.`);
+  }
+  return {
+    ...state,
+    mappings: [...state.mappings, { requirementId, testId }],
+  };
+}
+
+export function removeMapping(
+  state: AppState,
+  requirementId: string,
+  testId: string,
+): AppState {
+  return {
+    ...state,
+    mappings: state.mappings.filter(
+      (mapping) =>
+        !(mapping.requirementId === requirementId && mapping.testId === testId),
+    ),
+  };
+}

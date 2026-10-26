@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Try both evidence paths, then attempt a malformed import; confirm the error is understandable and the previous valid report is still shown. This is the planned early checkpoint; report what feels unclear or worth changing.
   Commit: `Add JUnit XML import`
 
-- [ ] **3. Link and unlink tests to requirements**
+- [x] **3. Link and unlink tests to requirements**
   Becomes usable: Each requirement has an inline mapper showing current tests and links; adding or removing a link immediately recomputes statuses, reasons, and counts, with shared-test and missing-link relationships visible.
   Why now: Manual explicit mappings are the product’s trust boundary; the mapper needs the current evidence and stable ledger before export can reflect it.
   PRD ref: `prd.md > Manual evidence mapper`; `prd.md > Required Verification` (9–11)
@@ -61,7 +61,7 @@ Build mode: fast
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 2: sample evidence, real JUnit import, and malformed-import preservation; learner feedback recorded and resolved.
+- [x] Early usable behavior explored — after slice 2: sample evidence, real JUnit import, and malformed-import preservation; learner feedback recorded and resolved.
 - [ ] Final kick-the-tires exploration and feedback completed — after slice 5: complete journey, README accuracy, and demo repeatability.
 
 ## Final Review
