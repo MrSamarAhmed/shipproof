@@ -91,3 +91,12 @@ Reflection: already covered during planning in the learner's own statements abou
 Activity mode: focused recap plus offline app map.
 
 ## Revisions
+
+- 2026-10-26 — Competitive-review revision, source commit `f897ab7`: added one release decision (`CANNOT VERIFY` / `NOT READY` / `LINKED CHECKS PASSED`) and a blocker list derived from the existing evaluator. The dashboard shows the decision above the counts and **What blocks confidence** once evidence is loaded; the JSON `summary` now includes `decision` and `blockers` while `schemaVersion` stays `1.0`. Status rules, parser, and mappings are unchanged.
+  - `npm test`: 5 files, 74 tests passed (`domain` 17, `export` 8, `state` 9, `junit` 20, `ui` 20).
+  - `npm run typecheck`: passed with no output.
+  - `npm run build`: passed; `dist/index.html`, `dist/assets/index-BTxLpmI-.css`, `dist/assets/index-CUJciBQM.js`.
+  - Production preview `http://127.0.0.1:4173`: empty state **CANNOT VERIFY** with load guidance and disabled export; sample **NOT READY**, 1/1/1, blockers REQ-002 and REQ-003; `all-pass.junit.xml` **NOT READY**, 2/0/1, only REQ-003 blocked although every test passed; linking a passing test to REQ-003 changed the decision to **LINKED CHECKS PASSED** (3/0/0) and removing it restored **NOT READY**; malformed import kept the prior source, counts, blockers, and decision, focused the alert, and cleared the picker.
+  - Export parity: the captured download Blob parsed as schema `1.0`, source `imported-junit` / `all-pass.junit.xml` / `synthetic: true`, decision `NOT_READY`, blockers containing only REQ-003, and requirement statuses 2 VERIFIED / 0 FAILED / 1 UNVERIFIED, matching the live screen. Feedback read **Download requested: shipproof-readiness-report.json**, and focus returned to the export control.
+  - Browser health at 516 px: no horizontal overflow; no console messages; only the local JS and CSS assets were requested. A fresh screenshot could not be captured because the in-app browser surface was hidden, so this revision records structural DOM checks rather than a new pixel-level visual review.
+  - `devpost/demo-script.md` now opens on the all-pass import and makes the all-passing-but-unlinked contrast the spine of the demo; `devpost/app-map.html` now maps `summarize` / `decisionFor` and the visible decision.

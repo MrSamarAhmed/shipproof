@@ -77,11 +77,11 @@
 <body>
 <main>
   <h1>ShipProof — App Map</h1>
-  <p class="lede">A reference map of the proof-of-concept as built: one real action followed from the screen to the code that computes the result.</p>
-  <p class="meta">Snapshot: commit <code>42bc8cf</code> · generated 2026-10-26 · offline document, no scripts</p>
+  <p class="lede">A reference map of the proof-of-concept as built: one real action followed from the screen to the code that computes the result and the release decision.</p>
+  <p class="meta">Snapshot: commit <code>f897ab7</code> · generated 2026-10-26 · offline document, no scripts</p>
 
   <h2>What the app is</h2>
-  <p>ShipProof is an evidence ledger for a small software project. It lists explicit requirements, lets you link each requirement to named JUnit tests, and reports the requirement as <strong>VERIFIED</strong>, <strong>FAILED</strong>, or <strong>UNVERIFIED</strong> from the observed test outcomes. A passing test is treated as narrow evidence, never as proof the whole feature works.</p>
+  <p>ShipProof is an evidence ledger for a small software project. It lists explicit requirements, lets you link each requirement to named JUnit tests, reports the requirement as <strong>VERIFIED</strong>, <strong>FAILED</strong>, or <strong>UNVERIFIED</strong>, and reduces those results to one release decision: <strong>CANNOT VERIFY</strong>, <strong>NOT READY</strong>, or <strong>LINKED CHECKS PASSED</strong>. A passing test is treated as narrow evidence, never as proof the whole feature works.</p>
   <div class="cards">
     <div class="card">
       <h3>Requirements and mappings</h3>
@@ -93,21 +93,21 @@
     </div>
     <div class="card">
       <h3>Evaluation</h3>
-      <p>One pure function applies the verification rule: any linked failure means FAILED; all linked checks must pass for VERIFIED; everything else is UNVERIFIED.</p>
+      <p>One pure function applies the verification rule: any linked failure means FAILED; all linked checks must pass for VERIFIED; everything else is UNVERIFIED. A second step reduces those rows to a decision and a blocker list.</p>
     </div>
     <div class="card">
       <h3>Output</h3>
-      <p>A deterministic JSON readiness report built from the same evaluation the dashboard shows, plus visible explanations and gaps.</p>
+      <p>A deterministic JSON readiness report built from the same evaluation the dashboard shows, including the decision, blockers, explanations, and gaps.</p>
     </div>
   </div>
 
   <h2>One action, end to end</h2>
-  <p>“Load sample evidence” is the shortest full path through the app: a click becomes parsed test results, an evaluated ledger, and the visible <strong>1 verified / 1 failed / 1 unverified</strong> summary.</p>
+  <p>“Load sample evidence” is the shortest full path through the app: a click becomes parsed test results, an evaluated ledger, and the visible <strong>NOT READY</strong> decision with <strong>1 verified / 1 failed / 1 unverified</strong>.</p>
 
   <div class="diagram" role="group" aria-label="Diagram: data flow from the Load sample button to the evaluated ledger. Scroll horizontally if needed." tabindex="0">
     <svg viewBox="0 0 900 300" role="img" aria-labelledby="diagram-title diagram-desc">
       <title id="diagram-title">Data flow for loading the sample evidence</title>
-      <desc id="diagram-desc">The user clicks Load sample evidence. src/ui.ts buildHeader sends the click to src/main.ts loadSample. loadSample passes bundled XML to src/junit.ts parseJUnitReport, then src/state.ts replaceEvidence stores the evidence, src/domain.ts evaluateLedger computes statuses, and src/ui.ts renders the summary and requirement rows.</desc>
+      <desc id="diagram-desc">The user clicks Load sample evidence. src/ui.ts buildHeader sends the click to src/main.ts loadSample. loadSample passes bundled XML to src/junit.ts parseJUnitReport, then src/state.ts replaceEvidence stores the evidence, src/domain.ts evaluateLedger computes statuses, summarize and decisionFor derive the release decision and blockers, and src/ui.ts renders the decision, blockers, counts, and requirement rows.</desc>
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e3a5f"></path>
@@ -144,22 +144,26 @@
         <line x1="666" y1="150" x2="702" y2="150" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"></line>
 
         <rect x="704" y="102" width="186" height="50" rx="5" fill="#eef2f7" stroke="#1e3a5f" stroke-width="1.5"></rect>
-        <text x="797" y="122" text-anchor="middle" fill="#0f172a" font-weight="700">domain.ts</text>
-        <text x="797" y="139" text-anchor="middle" fill="#475569">evaluateLedger → statusFor</text>
+        <text x="797" y="120" text-anchor="middle" fill="#0f172a" font-weight="700">domain.ts</text>
+        <text x="797" y="135" text-anchor="middle" fill="#475569" font-size="12">evaluateLedger → statusFor</text>
+        <text x="797" y="148" text-anchor="middle" fill="#64748b" font-size="10">summarize → decisionFor</text>
         <rect x="704" y="162" width="186" height="50" rx="5" fill="#f8fafc" stroke="#64748b"></rect>
         <text x="797" y="182" text-anchor="middle" fill="#0f172a" font-weight="700">ui.ts</text>
         <text x="797" y="199" text-anchor="middle" fill="#475569">renderDashboard</text>
 
-        <text x="450" y="255" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="700">Visible result: 1 VERIFIED · 1 FAILED · 1 UNVERIFIED</text>
-        <text x="450" y="275" text-anchor="middle" fill="#475569" font-size="12">REQ-003 has no linked test at all, so passing tests elsewhere in the report cannot verify it.</text>
+        <text x="450" y="255" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="700">Visible result: NOT READY · 1 VERIFIED · 1 FAILED · 1 UNVERIFIED</text>
+        <text x="450" y="275" text-anchor="middle" fill="#475569" font-size="12">Blockers: REQ-002 (FAILED) and REQ-003 (UNVERIFIED, no linked evidence).</text>
       </g>
     </svg>
   </div>
 
-  <p class="note">The same pure evaluator feeds the JSON export: <code>src/export.ts</code> calls <code>evaluateLedger(state)</code> and writes the resulting summary and per-requirement statuses. The screen and the downloaded report cannot disagree about a status unless the state changed between them.</p>
+  <p class="note">The same pure evaluator feeds the JSON export: <code>src/export.ts</code> calls <code>evaluateLedger(state)</code> and writes the resulting summary, decision, blockers, and per-requirement statuses. The screen and the downloaded report cannot disagree about a status or decision unless the state changed between them.</p>
+
+  <h2>The all-pass contrast</h2>
+  <p>Importing <code>fixtures/all-pass.junit.xml</code> makes every test case pass, but REQ-003 still has no linked evidence. The screen shows <strong>2 VERIFIED / 0 FAILED / 1 UNVERIFIED</strong> and <strong>NOT READY</strong>, with only REQ-003 in the blocker list. Linking one passing test to REQ-003 produces <strong>LINKED CHECKS PASSED</strong>; removing that link restores <strong>NOT READY</strong>. The suite's pass rate never decides the requirement — the explicit link does.</p>
 
   <h2>Reference route</h2>
-  <p><strong>Not a completed guided tour.</strong> This is a suggested 3-stop route for reading the code yourself. Each stop names a real file and a search anchor rather than a fragile line number.</p>
+  <p><strong>Not a completed guided tour.</strong> This is a suggested 4-stop route for reading the code yourself. Each stop names a real file and a search anchor rather than a fragile line number.</p>
 
   <div class="stop">
     <h3>Stop 1 — Where the click starts</h3>
@@ -176,7 +180,13 @@
   <div class="stop">
     <h3>Stop 3 — Where a status is decided</h3>
     <p class="where"><code>src/domain.ts</code> · search <code>function statusFor</code></p>
-    <p>This is the whole verification rule. A present <code>FAIL</code> wins, an empty check list is UNVERIFIED, all <code>PASS</code> is VERIFIED, and anything else — <code>MISSING</code>, <code>SKIPPED</code>, <code>ERROR</code> — falls through to UNVERIFIED. The requirement rows and summary above are built from this result, and <code>tests/domain.test.ts</code> pins the combinations.</p>
+    <p>This is the whole per-requirement verification rule. A present <code>FAIL</code> wins, an empty check list is UNVERIFIED, all <code>PASS</code> is VERIFIED, and anything else — <code>MISSING</code>, <code>SKIPPED</code>, <code>ERROR</code> — falls through to UNVERIFIED. The requirement rows are built from this result, and <code>tests/domain.test.ts</code> pins the combinations.</p>
+  </div>
+
+  <div class="stop">
+    <h3>Stop 4 — Where the release decision is derived</h3>
+    <p class="where"><code>src/domain.ts</code> · search <code>function summarize</code> and <code>function decisionFor</code></p>
+    <p>After every requirement is evaluated, <code>summarize</code> counts the statuses, calls <code>decisionFor</code>, and turns each non-verified row into a blocker with its ID, title, status, and reason. <code>src/ui.ts</code> · <code>buildDecision</code> renders that result above the counts. The JSON export consumes the same summary object, so the visible decision and the exported decision have one source.</p>
   </div>
 
   <details>
@@ -193,7 +203,25 @@
   }
   return 'UNVERIFIED';
 }</code></pre>
-    <p class="meta">Excerpt from <code>src/domain.ts</code> at commit <code>42bc8cf</code>. Comments and surrounding helpers omitted.</p>
+    <p class="meta">Excerpt from <code>src/domain.ts</code> at commit <code>f897ab7</code>. Comments and surrounding helpers omitted.</p>
+  </details>
+
+  <details>
+    <summary>Show the release-decision core</summary>
+    <pre><code>function decisionFor(
+  failed: number,
+  unverified: number,
+  hasEvidence: boolean,
+): ReadinessDecision {
+  if (!hasEvidence) {
+    return 'CANNOT_VERIFY';
+  }
+  if (failed &gt; 0 || unverified &gt; 0) {
+    return 'NOT_READY';
+  }
+  return 'LINKED_CHECKS_PASSED';
+}</code></pre>
+    <p class="meta">Excerpt from <code>src/domain.ts</code> at commit <code>f897ab7</code>. <code>summarize</code> builds the blocker list from non-verified results.</p>
   </details>
 
   <h2>To change this, start here</h2>
@@ -211,6 +239,11 @@
         <td>Accept more JUnit XML shapes</td>
         <td><code>src/junit.ts</code> · <code>parseJUnitReport</code></td>
         <td><code>tests/junit.test.ts</code> and the rejection messages users see.</td>
+      </tr>
+      <tr>
+        <td>Change the release decision or blocker list</td>
+        <td><code>src/domain.ts</code> · <code>summarize</code> / <code>decisionFor</code></td>
+        <td><code>tests/domain.test.ts</code>, <code>tests/export.test.ts</code>, and <code>src/ui.ts</code> · <code>buildDecision</code>.</td>
       </tr>
       <tr>
         <td>Change how links are added or removed</td>
@@ -237,7 +270,7 @@
 
   <h2>A practice to reuse</h2>
   <p>The reusable move is turning a vague completion claim into one deterministic predicate, then testing the evidence combinations that could make it lie.</p>
-  <p>In this project the claim “this requirement is verified” became the predicate <code>all linked checks pass</code>, written once in <code>statusFor</code> and exercised in <code>tests/domain.test.ts</code>. The bundled sample makes the payoff visible: REQ-003's linked evidence simply does not exist, so a report full of passing tests still shows <span class="status unverified">UNVERIFIED</span>. On another project, the same approach works for “done,” “safe to merge,” or “ready to ship”: name the observable evidence, define the rule in one place, and add the cases where missing or inconclusive evidence could otherwise be read as success.</p>
+  <p>In this project the claim “this requirement is verified” became the predicate <code>all linked checks pass</code>, written once in <code>statusFor</code> and exercised in <code>tests/domain.test.ts</code>. The bundled sample makes the payoff visible: REQ-003's linked evidence simply does not exist, so a report full of passing tests still shows <span class="status unverified">UNVERIFIED</span> and the overall decision stays <strong>NOT READY</strong>. On another project, the same approach works for “done,” “safe to merge,” or “ready to ship”: name the observable evidence, define the rule in one place, and add the cases where missing or inconclusive evidence could otherwise be read as success.</p>
 
   <h2>Run it again</h2>
   <pre><code>npm ci
@@ -247,7 +280,7 @@ npm run build    # typecheck and production bundle</code></pre>
   <p>Node 24 and npm are required. The app uses no API keys and makes no network requests at runtime; the sample is bundled.</p>
 
   <footer>
-    <p>Snapshot of commit <code>42bc8cf</code>, generated 2026-10-26. This map can drift: if code moves, verify paths and search anchors against the working tree. The document is static and offline; essential content needs no scripts.</p>
+    <p>Snapshot of commit <code>f897ab7</code>, generated 2026-10-26. This map can drift: if code moves, verify paths and search anchors against the working tree. The document is static and offline; essential content needs no scripts.</p>
   </footer>
 </main>
 </body>
