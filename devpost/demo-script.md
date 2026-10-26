@@ -5,7 +5,7 @@ status: draft
 
 # ShipProof demo run-of-show
 
-Target length: **2:45**, under the three-minute goal. This is an action and evidence sheet, not narration. Write and speak your own words; this document does not supply a script.
+Target length: **2:45**, inside the live Devpost requirement of **1 to 3 minutes**. This is an action and evidence sheet, not narration. Write and speak your own words; this document does not supply a script.
 
 ## Before recording
 
@@ -38,4 +38,4 @@ If a step runs long, drop the REQ-003 error-link step (1:20–1:40) rather than 
 - Confirm no personal information, credentials, unrelated tabs, or notification pop-ups appear.
 - Upload it somewhere reviewers can open without signing in. Check the link in a private window before submitting.
 - Record the video URL and repository URL in `devpost/spec.md` under its sharing instructions once both exist.
-- Check the live Devpost form for its own video length/format rules; this run-of-show targets the three-minute goal, not an assumed form limit.
+- Check the live Devpost form when submitting. It states a 1–3 minute video and notes that reviewers will not clone or run the code, so the working app must be visible on screen.
