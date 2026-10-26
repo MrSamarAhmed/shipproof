@@ -66,7 +66,15 @@ Build mode: fast
 
 ## Final Review
 
-- [ ] Final verification evidence recorded — exact outcomes for `npm test`, `npm run typecheck`, `npm run build`, real-browser golden path, and an actual downloaded JSON parsed and compared with the dashboard.
+- [x] Final verification evidence recorded — exact outcomes for `npm test`, `npm run typecheck`, `npm run build`, real-browser golden path, and an actual downloaded JSON parsed and compared with the dashboard.
+  - Final source commit: `9f42959`.
+  - `npm test`: 5 files, 68 tests passed.
+  - `npm run typecheck`: passed with no output.
+  - `npm run build`: passed; `dist/index.html`, `dist/assets/index-DgFwRlpK.css`, `dist/assets/index-BePFH92e.js`.
+  - Production preview at `http://127.0.0.1:4173`: empty state, sample load (1 VERIFIED / 1 FAILED / 1 UNVERIFIED), mapper, malformed import preservation, and export feedback verified in the running browser. No console errors; only the two local JS/CSS assets were requested.
+  - Keyboard: skip link → sample button → file input → wrap; visible 3px focus rings; skip link focused `#app`. Disabled export is skipped.
+  - Widths: 516 px and a 390 px iframe had no horizontal overflow; a 1200 px iframe used the desktop layout with status labels beside titles. Mapper controls stack at 390 px.
+  - Actual download: `~/Downloads/shipproof-readiness-report.json` (2,914 bytes) parsed as valid schema `1.0` JSON with source `synthetic-sample`, filename `sample-auth.junit.xml`, counts 1/1/1, and requirement statuses matching the dashboard at download time. After removing REQ-001's passing link, the in-browser generated Blob payload was parsed and matched the changed dashboard counts 0/1/2; the automation did not observe a second file save.
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
