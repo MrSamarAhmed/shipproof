@@ -366,12 +366,29 @@ a {
   text-transform: uppercase;
 }
 
+.decision-claim {
+  margin: 4px 0 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.decision-audit-label {
+  margin-top: 12px;
+}
+
 .decision-verdict {
   margin: 2px 0 6px;
   font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.01em;
   line-height: 1.15;
+}
+
+.decision-result {
+  margin: 0 0 6px;
+  color: var(--secondary);
+  font-weight: 600;
 }
 
 .decision-not-ready .decision-verdict {

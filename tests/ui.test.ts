@@ -156,6 +156,26 @@ describe('empty dashboard', () => {
   });
 });
 
+describe('claim audit', () => {
+  it('labels the demonstration claim and derives the audit result from the decision', () => {
+    const root = mount();
+
+    expect(root.textContent).toContain('Synthetic completion claim');
+    expect(root.querySelector('.decision-claim')?.textContent).toBe(
+      '“All three authentication requirements are complete.”',
+    );
+    expect(root.querySelector('.decision-result')?.textContent).toBe(
+      'Claim cannot be evaluated without evidence.',
+    );
+
+    root.querySelector<HTMLButtonElement>('button')?.click();
+
+    expect(root.querySelector('.decision-result')?.textContent).toBe(
+      'Claim is not supported by the current evidence.',
+    );
+  });
+});
+
 describe('sample load', () => {
   it('shows one verified, one failed, and one unverified requirement', () => {
     const root = mount();
@@ -175,7 +195,7 @@ describe('sample load', () => {
     expect(root.textContent).not.toContain('No evidence loaded yet.');
     expect(decisionVerdict(root)).toBe('NOT READY');
     expect(blockerIds(root)).toEqual(['REQ-002', 'REQ-003']);
-    expect(root.textContent).toContain('What blocks confidence');
+    expect(root.textContent).toContain('What blocks the claim');
     expect(root.querySelector('.blocker-reason')?.textContent).toContain(
       'reported an assertion failure',
     );
@@ -370,7 +390,7 @@ describe('manual mapper', () => {
     ).toContain('REQ-001 is now UNVERIFIED');
     expect(
       document.getElementById('shipproof-live-status')?.textContent,
-    ).toContain('Release decision: NOT READY');
+    ).toContain('Claim audit: NOT READY');
 
     addLink(root, 'REQ-001', 'test_valid_credentials_succeed');
 
@@ -433,6 +453,9 @@ describe('manual mapper', () => {
     expect(statusTexts(root)).toEqual(['VERIFIED', 'VERIFIED', 'VERIFIED']);
     expect(decisionVerdict(root)).toBe('LINKED CHECKS PASSED');
     expect(blockerIds(root)).toEqual([]);
+    expect(root.querySelector('.decision-result')?.textContent).toBe(
+      'Claim is supported by the linked checks, not proven true.',
+    );
     expect(root.textContent).toContain(
       'No requirement-level evidence gaps remain for the linked checks.',
     );
@@ -568,6 +591,12 @@ describe('JSON export', () => {
       'REQ-003',
     ]);
     expect(decisionVerdict(root)).toBe('NOT READY');
+    expect(root.querySelector('.decision')?.getAttribute('data-decision')).toBe(
+      report.summary.decision,
+    );
+    expect(root.querySelector('.decision-result')?.textContent).toBe(
+      'Claim is not supported by the current evidence.',
+    );
     expect(root.textContent).toContain(
       'Download requested: shipproof-readiness-report.json',
     );

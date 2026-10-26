@@ -7,7 +7,7 @@ status: approved
 
 ## How This Works, In Plain Language
 
-ShipProof is a local browser application, not a backend service. Three fictional authentication requirements and their initial test links are bundled with it. Opening the app loads those requirements but no test results, so every requirement starts UNVERIFIED.
+ShipProof is a local browser application, not a backend service. Three fictional authentication requirements and their initial test links are bundled with it, along with one fixed demonstration claim: “All three authentication requirements are complete.” Opening the app loads those requirements but no test results, so every requirement starts UNVERIFIED and the claim audit cannot yet evaluate the claim.
 
 Loading the synthetic sample or choosing a JUnit XML file sends that XML through the same parser. The parser produces test IDs, outcomes, and diagnostic messages. The app retains one current report and explicit mappings in memory. A pure TypeScript function joins those mappings to the current results and calculates each requirement's status. The dashboard and JSON export use that same calculation, never separate versions of the rules.
 
@@ -21,8 +21,8 @@ Implements `prd.md > The Core Journey`.
 2. **Load sample evidence** passes bundled XML text to `junit.ts`; **Import JUnit XML** reads the chosen local file and passes its text to the same parser.
 3. `junit.ts` validates the complete input and returns normalized tests plus any declared synthetic marker. It returns no partial report.
 4. `state.ts` replaces the evidence and its source atomically, preserving mappings. Failure leaves the previous valid domain state intact; the controller displays an import error.
-5. `domain.ts` derives requirement results, evidence gaps, counts, the release decision, the blocker list, and the readiness statement. `ui.ts` displays that result and the current source.
-6. A mapping add/remove action changes only mappings in `state.ts`; the domain function recomputes the ledger and the view updates, including the decision and blockers.
+5. `domain.ts` derives requirement results, evidence gaps, counts, the release decision, the blocker list, and the readiness statement. `ui.ts` presents that decision as the claim-audit result and displays the current source. The claim is a fixed synthetic demonstration statement from `sample.ts`; ShipProof does not observe an agent or infer a claim from test names.
+6. A mapping add/remove action changes only mappings in `state.ts`; the domain function recomputes the ledger and the view updates, including the claim-audit result and what blocks the claim.
 7. **Export readiness report (JSON)** calls `export.ts` with current state and a generation time. It uses the domain calculation, serializes indented JSON, and requests a local browser download.
 
 ```text
@@ -81,7 +81,7 @@ Implements `prd.md > Look and Feel` and `Screens and Layout`.
 
 Use one responsive dashboard, not routes or a component framework. White panels on a light neutral background, charcoal body text, slate secondary text, and navy primary buttons. Initial CSS colors: page `#f5f6f8`, surface `#ffffff`, text `#1f2937`, secondary `#475569`, action `#1e3a5f`; status text green `#166534`, red `#991b1b`, amber `#92400e` on restrained pale backgrounds. Verify actual text/background contrast during build rather than claiming these choices alone establish accessibility.
 
-Use local system sans-serif and system monospace stacks; no font downloads. Keep a compact header/source area, a release-decision panel, and three status counters above the requirement rows. The decision panel states **CANNOT VERIFY**, **NOT READY**, or **LINKED CHECKS PASSED**, gives its reason, and — once a report is loaded — lists **What blocks confidence** for every non-verified requirement. In the empty state it explains how to begin. Each requirement shows its ID, title, readable status, rationale, links, and diagnostics. Wrap long identifiers and preserve multiline diagnostic text without horizontal overflow.
+Use local system sans-serif and system monospace stacks; no font downloads. Keep a compact header/source area, a claim-audit panel, and three status counters above the requirement rows. The panel presents the fixed claim labeled **Synthetic completion claim**, then the claim-audit result **CANNOT VERIFY**, **NOT READY**, or **LINKED CHECKS PASSED** with its reason, and — once a report is loaded — lists **What blocks the claim** for every non-verified requirement. The result sentence is “Claim cannot be evaluated without evidence,” “Claim is not supported by the current evidence,” or “Claim is supported by the linked checks, not proven true.” In the empty state the panel explains how to begin. Each requirement shows its ID, title, readable status, rationale, links, and diagnostics. Wrap long identifiers and preserve multiline diagnostic text without horizontal overflow.
 
 Use semantic headings, buttons, labels, lists, native select controls, and inline expandable mapping panels. No modal focus trap or complex navigation. Maintain keyboard focus across updates, expose expanded state, and announce concise changes through a live status region; import errors use an alert. Text labels always accompany semantic colors. No animations, charts, gradients, decorative imagery, or design-system build-out.
 
@@ -103,7 +103,7 @@ For each requirement:
 
 The single verification rule is `all-linked-checks-pass`; it is not configurable in this POC. A PASS + MISSING pair is UNVERIFIED. Suite counters and unlinked test results never determine requirement status.
 
-The function returns requirement results, all linked outcomes/messages, structured gaps, status counts, the release decision, the blocker list, and the readiness statement. The decision is CANNOT_VERIFY without evidence, NOT_READY when any requirement is FAILED or UNVERIFIED, and LINKED_CHECKS_PASSED only when every requirement is VERIFIED. A blocker records each non-verified requirement's ID, title, status, and reason. A no-links requirement has a requirement-level gap even though it has no individual missing test. If a failure and gaps coexist, the summary warns about both. Even an all-VERIFIED ledger includes the limited-claim warning.
+The function returns requirement results, all linked outcomes/messages, structured gaps, status counts, the release decision, the blocker list, and the readiness statement. The decision is CANNOT_VERIFY without evidence, NOT_READY when any requirement is FAILED or UNVERIFIED, and LINKED_CHECKS_PASSED only when every requirement is VERIFIED. The UI calls this value the claim-audit result; it does not calculate a second verdict. A blocker records each non-verified requirement's ID, title, status, and reason. A no-links requirement has a requirement-level gap even though it has no individual missing test. If a failure and gaps coexist, the summary warns about both. Even an all-VERIFIED ledger includes the limited-claim warning.
 
 ### JUnit Import Boundary
 
@@ -153,7 +153,7 @@ Implements `prd.md > Screens and Layout`, `Reading the evidence dashboard`, and 
 
 `ui.ts` renders the dashboard from domain state, evaluated ledger, and transient interaction state. Use DOM creation/textContent for untrusted fields; static markup is allowed only where it cannot interpolate imported content.
 
-Show source and filename, exact empty-state text, counts and readiness statement, requirement results, visible diagnostic messages, and permanent limited-claim language. Use a per-requirement inline mapping panel with a labeled available-test selector, explicit Add link button, and individually named Remove link buttons. Show existing missing links separately and make shared relationships visible. Keep selected panels open and restore meaningful focus after a mapping change.
+Show source and filename, exact empty-state text, the labeled synthetic completion claim, claim-audit result and reason, what blocks the claim, counts and readiness statement, requirement results, visible diagnostic messages, and permanent limited-claim language. Use a per-requirement inline mapping panel with a labeled available-test selector, explicit Add link button, and individually named Remove link buttons. Show existing missing links separately and make shared relationships visible. Keep selected panels open and restore meaningful focus after a mapping change.
 
 The export button is labeled as JSON and disabled before evidence loads; explain the disabled state visibly. The mapper is unavailable without evidence. No extra onboarding surface, requirements editor, filter system, or chart is added.
 
@@ -181,7 +181,7 @@ provenance: { method, limitations: [string, ...] }
 
 Check outcomes are PASS / FAIL / SKIPPED / ERROR / MISSING. `message` is a string or null. Gaps use `NO_LINKED_TESTS`, `SKIPPED`, `ERROR`, or `MISSING`; a requirement-level no-links gap has `testId: null`. Gap entries are preserved on FAILED requirements too. Mapped missing checks have explicit MISSING entries and explanatory messages.
 
-`summary.decision` is CANNOT_VERIFY, NOT_READY, or LINKED_CHECKS_PASSED. `summary.blockers` lists each non-verified requirement as `{ requirementId, title, status, reason }` and is empty only when all requirements are verified. Both fields come from the same `evaluateLedger` result as the dashboard, so the exported decision cannot disagree with the visible one.
+`summary.decision` is the machine-readable claim-audit result: CANNOT_VERIFY, NOT_READY, or LINKED_CHECKS_PASSED. `summary.blockers` lists each non-verified requirement as `{ requirementId, title, status, reason }` and is empty only when all requirements are verified. Both fields come from the same `evaluateLedger` result as the dashboard, so the exported result and blockers cannot disagree with the visible claim audit.
 
 The provenance states deterministic evaluation of available report plus mappings, the limited meaning of VERIFIED, human responsibility for test relevance, no test execution/authenticity verification, and the synthetic warning when applicable. Pretty-printed JSON supplies the agreed readable export without PDF/HTML report generation.
 
@@ -194,8 +194,8 @@ A browser cannot confirm that the user saved the file to disk. UI feedback says 
 - `Evidence`: `{ source: { kind, filename, synthetic: true | null }, tests: TestResult[] }`; exactly one current report in memory.
 - `Mapping`: `{ requirementId, testId }`; unique pair, preserved across imports.
 - `AppState`: `{ requirements: Requirement[], mappings: Mapping[], evidence: Evidence | null }`; recreated on refresh.
-- `Ledger`: requirement evaluations, summary including release decision and blockers, readiness statement; derived, not persisted.
-- UI-only state: busy flag, import error, status announcement, open mapper ID. It never replaces valid evidence on an error.
+- `Ledger`: requirement evaluations, summary including decision and blockers, readiness statement; derived, not persisted. The dashboard presents `summary.decision` as the claim-audit result.
+- UI-only presentation state: busy flag, import error, status announcement, open mapper ID, and the fixed synthetic completion claim passed to the renderer. None of it replaces valid evidence on an error.
 
 Test IDs are treated as opaque strings and indexed with `Map`, not unsafe object-property lookup. No raw XML persistence, localStorage, backend, database, report history, or automatic association with the user's actual codebase.
 
@@ -252,11 +252,11 @@ No application services, endpoints, credentials, hosting, or external network ca
 
 Implements `prd.md > Required Verification` in small checks that the build checklist can cite.
 
-1. **Domain tests:** all three sample outcomes; empty evidence; zero links; all passing; failure precedence with gaps; PASS + MISSING/SKIPPED/ERROR; all inconclusive evidence; removing the only passing link; independent evaluation of shared checks; unlinked failures/passes cannot decide a requirement; correct reasons, gap records, counts, release decision, and blockers (including all linked checks passing while a requirement stays unlinked).
+1. **Domain tests:** all three sample outcomes; empty evidence; zero links; all passing; failure precedence with gaps; PASS + MISSING/SKIPPED/ERROR; all inconclusive evidence; removing the only passing link; independent evaluation of shared checks; unlinked failures/passes cannot decide a requirement; correct reasons, gap records, counts, claim-audit decision, and blockers (including all linked checks passing while a requirement stays unlinked).
 2. **Parser tests:** single/multiple/nested suites; stable class-qualified IDs and collision rejection; failure/error/skipped messages; UTF-8 identifiers; malformed XML; zero cases; unsupported roots/outcomes/namespaces; conflicting markers; suite errors; size/case limits; DOCTYPE/entity rejection; synthetic marker; hostile HTML-like diagnostic text remains plain text.
 3. **State tests:** valid replacement preserves mappings and never reuses old results; missing links remain; invalid/duplicate mappings rejected; removing missing links works; malformed replacement leaves the previous state identical; failed initial import stays empty.
-4. **Export tests:** JSON parse round trip, version and ISO generation time with fixed test clock, source/filename/synthetic provenance, linked IDs/outcomes/messages/gaps, failure-plus-gap warning, mapping changes and imports reflected, decision and blockers identical to domain/dashboard, counts identical to domain/dashboard, export absent evidence rejected.
-5. **jsdom UI tests:** initial disabled actions and exact copy, visible decision and blockers in empty/sample/all-pass states, mapping-driven decision recomputation, missing-link visibility, failed import preservation, loading action guard, input-derived text safety, and download Blob/object URL payload. Mocked download tests verify wiring/payload only, not an actual saved file.
+4. **Export tests:** JSON parse round trip, version and ISO generation time with fixed test clock, source/filename/synthetic provenance, linked IDs/outcomes/messages/gaps, failure-plus-gap warning, mapping changes and imports reflected, claim-audit decision and blockers identical to the domain/dashboard, counts identical to domain/dashboard, export absent evidence rejected.
+5. **jsdom UI tests:** initial disabled actions and exact copy, the labeled synthetic claim and result sentence in empty/sample/all-pass states, visible claim audit and blockers, mapping-driven claim-result recomputation, missing-link visibility, failed import preservation, loading action guard, input-derived text safety, and download Blob/object URL payload. Mocked download tests verify wiring/payload only, not an actual saved file.
 6. **Real browser review:** start the server; use the golden path and invalid-file/replacement paths; inspect an actual downloaded JSON file or directly capture its download bytes and parse them; compare counts after a mapping change. Inspect keyboard focus and screen-reader-relevant labels, narrow viewport, console errors, and network requests. Test the production preview for no external requests; local asset requests and the dev-server socket are not external services.
 7. **Full commands:** run `npm test`, `npm run typecheck`, and `npm run build`; record exact outcomes. No unrun browser, accessibility, offline, download, or test check is marked passed.
 

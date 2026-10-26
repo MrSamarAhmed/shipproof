@@ -5,7 +5,7 @@ status: approved
 
 # ShipProof — Proof Before Done — Product Requirements
 
-An evidence ledger for solo developers and small engineering teams using AI coding agents. It maps explicit requirements to linked JUnit test evidence, reports VERIFIED / FAILED / UNVERIFIED, and exports the current state as a JSON readiness report.
+A claim-audit ledger for solo developers and small engineering teams using AI coding agents. It audits a clearly labeled synthetic completion claim against explicit requirements and linked JUnit test evidence, reports VERIFIED / FAILED / UNVERIFIED, and exports the current state as a JSON readiness report.
 
 Source: `scope.md > The Unique Kernel`, `The Core Loop`, `What "Working" Looks Like`, `The POC Boundary`, `Explicitly Cut`.
 
@@ -15,21 +15,21 @@ Source: `scope.md > The Unique Kernel`, `The Core Loop`, `What "Working" Looks L
    - `REQ-001 — Authentication works`
    - `REQ-002 — Invalid credentials are rejected`
    - `REQ-003 — Rate limiting is enforced`
-2. No evidence is loaded yet. The release decision is `CANNOT VERIFY`; all three requirements display `UNVERIFIED` with the explanation that no test evidence has been loaded. A dashboard message reads: “No evidence loaded yet. ShipProof cannot verify completion claims without supporting test results.”
+2. The dashboard presents the fixed demonstration claim — “All three authentication requirements are complete.” — labeled **Synthetic completion claim**. No evidence is loaded yet, so the claim audit cannot evaluate it: the claim-audit result is `CANNOT VERIFY` and the reason is “Claim cannot be evaluated without evidence.” All three requirements display `UNVERIFIED` with the explanation that no test evidence has been loaded. A dashboard message reads: “No evidence loaded yet. ShipProof cannot verify completion claims without supporting test results.”
 3. Two primary actions are available: **Load sample evidence** and **Import JUnit XML**. No tutorial, onboarding wizard, or setup screen is added.
-4. **Load sample evidence** loads a clearly labeled synthetic JUnit report. Its fixed mappings resolve to `test_valid_credentials_succeed` (PASS) for REQ-001 and `test_invalid_credentials_rejected` (FAIL) for REQ-002. REQ-003 has no linked tests. The dashboard shows one VERIFIED, one FAILED, and one UNVERIFIED requirement; the release decision is `NOT READY`, and the blocker list names REQ-002 and REQ-003 with their reasons.
+4. **Load sample evidence** loads a clearly labeled synthetic JUnit report. Its fixed mappings resolve to `test_valid_credentials_succeed` (PASS) for REQ-001 and `test_invalid_credentials_rejected` (FAIL) for REQ-002. REQ-003 has no linked tests. The dashboard shows one VERIFIED, one FAILED, and one UNVERIFIED requirement. The claim audit returns `NOT READY` with “Claim is not supported by the current evidence,” and **What blocks the claim** names REQ-002 and REQ-003 with their reasons.
 5. **Import JUnit XML** opens a file picker. A valid report becomes the current evidence source, existing explicit mappings are preserved and reconciled against the new report, absent test IDs are flagged `MISSING`, and all statuses are recomputed. A malformed report shows an error and leaves the previous valid state intact.
 6. The user inspects the summary, each requirement’s status and rationale, linked test IDs and outcomes, failure/error details, and evidence gaps.
 7. The user opens the manual mapper, adds or removes requirement-to-test links, and sees affected statuses recompute immediately from the current evidence and links.
 8. The user exports the current readiness report as `shipproof-readiness-report.json`. The file reflects the current evidence, mappings, statuses, and counts — never hard-coded sample output.
-9. The key moment: REQ-003 stays `UNVERIFIED` even though the report contains passing tests, because no adequate test evidence is linked to it. ShipProof explains exactly why.
+9. The key moment: REQ-003 stays `UNVERIFIED` even though the report contains passing tests, because no adequate test evidence is linked to it. The claim remains unsupported, and ShipProof explains exactly why.
 
 ## Screens and Layout
 
 A single dashboard surface, with supporting panel/dialog interactions. No extra setup or onboarding screens.
 
 - **Header:** ShipProof wordmark and “Proof Before Done” tagline; sample project name; evidence-source label; primary actions: **Load sample evidence** (empty state only) and **Import JUnit XML**; **Export readiness report**; optional **Reset to sample** when time permits.
-- **Readiness summary:** one release decision — `CANNOT VERIFY`, `NOT READY`, or `LINKED CHECKS PASSED` — with its reason; compact counts for VERIFIED, FAILED, and UNVERIFIED; and, once evidence is loaded, a **What blocks confidence** list naming each non-verified requirement. `LINKED CHECKS PASSED` is used instead of "ready" to avoid overclaiming.
+- **Claim audit summary:** the fixed synthetic completion claim — “All three authentication requirements are complete.” — followed by the claim-audit result (`CANNOT VERIFY`, `NOT READY`, or `LINKED CHECKS PASSED`) and its reason; compact counts for VERIFIED, FAILED, and UNVERIFIED; and, once evidence is loaded, a **What blocks the claim** list naming each non-verified requirement. The claim-audit result reuses the existing release decision; `LINKED CHECKS PASSED` is used instead of "ready" to avoid overclaiming.
 - **Empty state:** the required “No evidence loaded yet…” message, the two evidence actions, and the three requirement rows at `UNVERIFIED`.
 - **Requirement list:** the visual center of the dashboard. Each row shows requirement ID, title, status label, one-sentence rationale, linked test IDs with normalized outcomes, failure/error details, and a clear mapping action.
 - **Evidence detail:** expands inline or in a panel to show linked checks, failure/error messages, skipped/missing/errored gaps, and whether the source is synthetic or imported.
@@ -90,7 +90,7 @@ A single dashboard surface, with supporting panel/dialog interactions. No extra 
 
 ### Reading the evidence dashboard
 
-- The dashboard shows the release decision in every state: `CANNOT VERIFY` before evidence, `NOT READY` while any requirement is FAILED or UNVERIFIED, and `LINKED CHECKS PASSED` only when every requirement is VERIFIED. In the empty state the panel explains how to begin; once evidence is loaded it lists the blockers.
+- The dashboard audits the fixed synthetic completion claim in every state: `CANNOT VERIFY` before evidence, `NOT READY` while any requirement is FAILED or UNVERIFIED, and `LINKED CHECKS PASSED` only when every requirement is VERIFIED. The claim result states “Claim cannot be evaluated without evidence,” “Claim is not supported by the current evidence,” or “Claim is supported by the linked checks, not proven true.” In the empty state the panel explains how to begin; once evidence is loaded it lists what blocks the claim.
 - The summary shows total requirements and counts of VERIFIED, FAILED, and UNVERIFIED. The counts always match the requirement rows.
 - The readiness statement reflects actual failures and evidence gaps. It never implies that a passing suite proves the whole feature or application correct.
 - Every requirement row shows:
@@ -142,7 +142,7 @@ Explicit resolution: REQ-002 with one PASS and one MISSING linked test is `UNVER
 - Export is enabled after evidence is loaded. In the empty state it is disabled with a clear explanation; the export does not invent an evidence source.
 - The report contains:
   - **Metadata:** product name ShipProof; ISO 8601 generation timestamp; schema version; evidence source (synthetic sample or imported JUnit XML); imported filename when applicable.
-  - **Summary:** total requirement count; VERIFIED, FAILED, and UNVERIFIED counts; the release decision and blockers; a readiness statement that warns about actual failures and evidence gaps.
+  - **Summary:** total requirement count; VERIFIED, FAILED, and UNVERIFIED counts; the machine-readable claim-audit result (`decision`) and its blocking requirements (`blockers`); a readiness statement that warns about actual failures and evidence gaps.
   - **Requirement results:** stable ID and title; final status; explanation; explicit linked test IDs; normalized outcome for each linked test; failure/error message when available; unresolved missing, skipped, or errored gaps.
   - **Provenance and limitations:** statuses are computed deterministically from the current report and explicit mappings; VERIFIED means verified against linked checks, not proven correct in general; synthetic sample evidence is identified as synthetic and not a real test run.
 - The report is valid, machine-readable JSON with a documented, versioned schema. The schema version for this MVP is `1.0`.
@@ -182,7 +182,8 @@ Explicit resolution: REQ-002 with one PASS and one MISSING linked test is `UNVER
 - Requirements-file import, requirements editing, additional test formats, accounts, persistence, and deployment are out of the POC. — Learner decision.
 - Export is disabled until evidence exists; the report’s evidence source is always labeled synthetic sample or imported evidence. — Agent assumption, aligned with the required metadata.
 - Unlinked tests do not affect requirement statuses; they are visible only in the mapper. — Agent assumption derived from explicit-only mappings; documented as a limitation.
-- A single visible release decision and blocker list, derived from the same evaluator as the rows and export, with `LINKED CHECKS PASSED` rather than "ready." — Agent refinement of the readiness summary, covered by domain, export, and UI tests.
+- A single visible claim audit and blocker list, derived from the same evaluator as the rows and export, with `LINKED CHECKS PASSED` rather than "ready." The audit reuses the existing release decision; no separate verdict is calculated. — Agent refinement of the readiness summary, covered by domain, export, and UI tests.
+- The completion claim is a fixed demonstration statement bundled with the sample, labeled synthetic. ShipProof does not observe an AI agent, parse an agent message, or infer that a claim was made. — Agent refinement required to avoid fabricating agent behavior.
 - Reset to sample is a stretch, implemented only after the core journey is verified. — Learner instruction.
 
 ## What We're Building
@@ -191,7 +192,7 @@ Explicit resolution: REQ-002 with one PASS and one MISSING linked test is `UNVER
 - The exact empty state, sample-evidence action, and JUnit XML import behavior above.
 - A central deterministic status engine with automated tests for every rule and normalized outcome.
 - The manual add/remove mapper with immediate recomputation, duplicate prevention, missing-link preservation, and shared-test visibility.
-- A dashboard showing the release decision, blocker list, summary counts, readiness statement, requirement rows, evidence details, failures, gaps, and source labels.
+- A dashboard auditing a labeled synthetic completion claim, with the claim-audit result, what blocks the claim, summary counts, readiness statement, requirement rows, evidence details, failures, gaps, and source labels.
 - A valid current-state JSON export with the required metadata, summary, requirement results, provenance, and limitations.
 - Explicit loading, empty, import-error, export-success, and missing/skipped/errored evidence states.
 - Accessible, responsive calm audit-ledger styling.
@@ -217,8 +218,9 @@ Automated tests and a hands-on review must demonstrate:
 13. Export is valid JSON with the correct schema version and provenance.
 14. Exported counts and statuses match the current dashboard state.
 15. Repeated demo runs produce the same sample statuses.
-16. The release decision and blocker list match the requirement rows: `CANNOT VERIFY` with no evidence, `NOT READY` for the sample and for an all-passing report that leaves REQ-003 unlinked, and `LINKED CHECKS PASSED` only after every requirement is verified.
-17. Exported decision and blockers match the visible dashboard in the same state.
+16. The claim-audit result and blockers match the requirement rows: `CANNOT VERIFY` with no evidence, `NOT READY` for the sample and for an all-passing report that leaves REQ-003 unlinked, and `LINKED CHECKS PASSED` only after every requirement is verified.
+17. Exported `summary.decision` and `summary.blockers` match the visible claim audit in the same state.
+18. The synthetic completion claim is labeled as synthetic, and its result sentence matches the decision: cannot be evaluated / not supported / supported by linked checks, not proven true.
 
 The build must also verify the import's empty-report, unsupported-structure, and ambiguous-duplicate handling; keyboard and status-label accessibility; and the absence of network calls in the demo path. Tests are run, observed, and recorded honestly; no unrun check is reported as passing.
 

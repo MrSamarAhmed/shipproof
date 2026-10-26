@@ -4,6 +4,8 @@ import type { Mapping, Requirement } from './model';
 export const SAMPLE_PROJECT_NAME = 'Authentication';
 export const SAMPLE_FILENAME = 'sample-auth.junit.xml';
 export const SAMPLE_XML = sampleXml;
+export const SAMPLE_COMPLETION_CLAIM =
+  'All three authentication requirements are complete.';
 
 export const REQUIREMENTS: readonly Requirement[] = [
   {

@@ -14,8 +14,19 @@ const DECISION_LABELS: Record<ReadinessDecision, string> = {
   LINKED_CHECKS_PASSED: 'LINKED CHECKS PASSED',
 };
 
+const CLAIM_RESULTS: Record<ReadinessDecision, string> = {
+  CANNOT_VERIFY: 'Claim cannot be evaluated without evidence.',
+  NOT_READY: 'Claim is not supported by the current evidence.',
+  LINKED_CHECKS_PASSED:
+    'Claim is supported by the linked checks, not proven true.',
+};
+
 export function decisionLabel(decision: ReadinessDecision): string {
   return DECISION_LABELS[decision];
+}
+
+function claimResult(decision: ReadinessDecision): string {
+  return CLAIM_RESULTS[decision];
 }
 
 export type BusyAction = 'sample' | 'import';
@@ -33,6 +44,7 @@ export interface DashboardOptions {
   readonly openMapperId: string | null;
   readonly exportFeedback: ExportFeedback | null;
   readonly projectName: string;
+  readonly completionClaim: string;
   readonly onLoadSample: () => void;
   readonly onImportFile: (file: File) => void;
   readonly onExport: () => void;
@@ -255,12 +267,12 @@ function buildMain(options: DashboardOptions): HTMLElement {
     );
   }
 
-  section.append(buildSummary(ledger), buildRequirementList(options));
+  section.append(buildSummary(ledger, options.completionClaim), buildRequirementList(options));
   main.append(section);
   return main;
 }
 
-function buildSummary(ledger: Ledger): HTMLElement {
+function buildSummary(ledger: Ledger, completionClaim: string): HTMLElement {
   const section = element('section', {
     className: 'summary',
     attrs: { 'aria-labelledby': 'summary-heading' },
@@ -271,7 +283,7 @@ function buildSummary(ledger: Ledger): HTMLElement {
       text: 'Readiness summary',
       attrs: { id: 'summary-heading' },
     }),
-    buildDecision(ledger),
+    buildDecision(ledger, completionClaim),
   );
 
   const counts = element('dl', {
@@ -302,7 +314,7 @@ function buildSummary(ledger: Ledger): HTMLElement {
   return section;
 }
 
-function buildDecision(ledger: Ledger): HTMLElement {
+function buildDecision(ledger: Ledger, completionClaim: string): HTMLElement {
   const { summary } = ledger;
   const panel = element('div', {
     className: `decision decision-${summary.decision.toLowerCase().replaceAll('_', '-')}`,
@@ -310,10 +322,25 @@ function buildDecision(ledger: Ledger): HTMLElement {
   });
 
   panel.append(
-    element('p', { className: 'decision-kicker', text: 'Release decision' }),
+    element('p', {
+      className: 'decision-kicker',
+      text: 'Synthetic completion claim',
+    }),
+    element('p', {
+      className: 'decision-claim',
+      text: `“${completionClaim}”`,
+    }),
+    element('p', {
+      className: 'decision-kicker decision-audit-label',
+      text: 'Claim audit',
+    }),
     element('p', {
       className: 'decision-verdict',
       text: decisionLabel(summary.decision),
+    }),
+    element('p', {
+      className: 'decision-result',
+      text: claimResult(summary.decision),
     }),
     element('p', {
       className: 'readiness-statement decision-reason',
@@ -347,7 +374,7 @@ function buildBlockers(blockers: readonly Blocker[]): HTMLElement {
   block.append(
     element('h3', {
       className: 'blockers-heading',
-      text: 'What blocks confidence',
+      text: 'What blocks the claim',
     }),
   );
   const list = element('ul', { className: 'blocker-list' });

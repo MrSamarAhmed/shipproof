@@ -3,7 +3,12 @@ import { evaluateLedger } from './domain';
 import { EXPORT_FILENAME, serializeReadinessReport } from './export';
 import { MAX_JUNIT_BYTES, parseJUnitReport } from './junit';
 import type { AppState, Evidence } from './model';
-import { SAMPLE_FILENAME, SAMPLE_PROJECT_NAME, SAMPLE_XML } from './sample';
+import {
+  SAMPLE_COMPLETION_CLAIM,
+  SAMPLE_FILENAME,
+  SAMPLE_PROJECT_NAME,
+  SAMPLE_XML,
+} from './sample';
 import {
   addMapping,
   applyImportedReport,
@@ -38,6 +43,7 @@ export function startApp(root: HTMLElement): void {
       openMapperId,
       exportFeedback,
       projectName: SAMPLE_PROJECT_NAME,
+      completionClaim: SAMPLE_COMPLETION_CLAIM,
       onLoadSample: loadSample,
       onImportFile: (file) => {
         void importFile(file);
@@ -129,7 +135,7 @@ export function startApp(root: HTMLElement): void {
     exportFeedback = null;
     const ledger = evaluateLedger(state);
     const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
-    announcement = `Linked ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified. Release decision: ${decisionLabel(ledger.summary.decision)}.`;
+    announcement = `Linked ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified. Claim audit: ${decisionLabel(ledger.summary.decision)}.`;
     pendingFocus = `mapper-toggle-${requirementId}`;
     render();
   }
@@ -143,7 +149,7 @@ export function startApp(root: HTMLElement): void {
     exportFeedback = null;
     const ledger = evaluateLedger(state);
     const status = ledger.requirements.find((item) => item.id === requirementId)?.status;
-    announcement = `Removed the link from ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified. Release decision: ${decisionLabel(ledger.summary.decision)}.`;
+    announcement = `Removed the link from ${testId} to ${requirementId}. ${requirementId} is now ${status}. ${ledger.summary.verified} verified, ${ledger.summary.failed} failed, ${ledger.summary.unverified} unverified. Claim audit: ${decisionLabel(ledger.summary.decision)}.`;
     pendingFocus = `mapper-toggle-${requirementId}`;
     render();
   }
