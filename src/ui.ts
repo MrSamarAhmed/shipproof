@@ -393,6 +393,7 @@ function buildMapper(
 ): HTMLElement {
   const { state } = options;
   const isOpen = options.openMapperId === result.id;
+  const mappingDisabled = options.busyAction !== null;
   const wrapper = element('div', { className: 'mapper' });
 
   const toggleAttrs: Record<string, string> = {
@@ -408,6 +409,7 @@ function buildMapper(
     text: isOpen ? 'Hide test links' : 'Manage test links',
     attrs: toggleAttrs,
   });
+  toggle.disabled = mappingDisabled;
   toggle.addEventListener('click', () => options.onToggleMapper(result.id));
   wrapper.append(toggle);
 
@@ -423,6 +425,15 @@ function buildMapper(
       'aria-label': `Test links for ${result.id}`,
     },
   });
+
+  if (mappingDisabled) {
+    panel.append(
+      element('p', {
+        className: 'mapper-note warning',
+        text: 'Mapping is unavailable while a report is being read.',
+      }),
+    );
+  }
 
   panel.append(element('h3', { text: 'Current links' }));
   const checksById = new Map(result.checks.map((check) => [check.testId, check]));
@@ -472,6 +483,7 @@ function buildMapper(
           'data-focus-key': `mapper-remove-${result.id}`,
         },
       });
+      remove.disabled = mappingDisabled;
       remove.setAttribute(
         'aria-label',
         `Remove link to ${testId} from ${result.id}`,
@@ -518,7 +530,7 @@ function buildMapper(
       }),
     );
   }
-  select.disabled = available.length === 0;
+  select.disabled = mappingDisabled || available.length === 0;
 
   const addButton = element('button', {
     className: 'button primary',
@@ -530,10 +542,10 @@ function buildMapper(
   });
   addButton.disabled = true;
   select.addEventListener('change', () => {
-    addButton.disabled = select.value === '';
+    addButton.disabled = mappingDisabled || select.value === '';
   });
   addButton.addEventListener('click', () => {
-    if (select.value !== '') {
+    if (!mappingDisabled && select.value !== '') {
       options.onAddMapping(result.id, select.value);
     }
   });

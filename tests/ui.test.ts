@@ -247,7 +247,8 @@ describe('JUnit import', () => {
 
   it('disables actions while a report is being read and keeps the prior view', async () => {
     const root = mount();
-    root.querySelector<HTMLButtonElement>('button')?.click();
+    loadSample(root);
+    openMapper(root, 'REQ-001');
     const priorStatuses = statusTexts(root);
 
     let resolveText: ((text: string) => void) | undefined;
@@ -269,6 +270,17 @@ describe('JUnit import', () => {
     );
     expect(statusTexts(root)).toEqual(priorStatuses);
     expect(root.querySelector('.file-button')?.getAttribute('aria-disabled')).toBe('true');
+
+    const mapper = requirement(root, 'REQ-001');
+    expect(mapper.querySelector<HTMLButtonElement>('.mapper-toggle')?.disabled).toBe(true);
+    expect(mapper.querySelector<HTMLSelectElement>('.select')?.disabled).toBe(true);
+    expect(
+      mapper.querySelector<HTMLButtonElement>('button[aria-label^="Remove link"]')
+        ?.disabled,
+    ).toBe(true);
+    expect(mapper.textContent).toContain(
+      'Mapping is unavailable while a report is being read.',
+    );
 
     resolveText?.(allPassXml);
     await waitFor(() => statusTexts(root).join(',') === 'VERIFIED,VERIFIED,UNVERIFIED');
@@ -504,6 +516,40 @@ describe('JSON export', () => {
     expect(document.getElementById('shipproof-live-status')?.textContent).toBe(
       'Download requested: shipproof-readiness-report.json',
     );
+    expect(document.activeElement?.getAttribute('data-focus-key')).toBe(
+      'export-report',
+    );
+  });
+
+  it('shows an inline error when the download cannot be started', () => {
+    const root = mount();
+    loadSample(root);
+
+    const urlApi = URL as unknown as {
+      createObjectURL?: (blob: Blob) => string;
+    };
+    const originalCreate = urlApi.createObjectURL;
+    urlApi.createObjectURL = () => {
+      throw new Error('Blob URLs are unavailable.');
+    };
+
+    try {
+      exportButton(root).click();
+    } finally {
+      if (originalCreate === undefined) {
+        delete urlApi.createObjectURL;
+      } else {
+        urlApi.createObjectURL = originalCreate;
+      }
+    }
+
+    expect(root.querySelector('.export-feedback.is-error')?.textContent).toBe(
+      'Blob URLs are unavailable.',
+    );
+    expect(document.getElementById('shipproof-live-status')?.textContent).toContain(
+      'Export failed.',
+    );
+    expect(exportButton(root).disabled).toBe(false);
     expect(document.activeElement?.getAttribute('data-focus-key')).toBe(
       'export-report',
     );

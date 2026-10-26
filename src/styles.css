@@ -48,7 +48,8 @@ body {
 h1,
 h2,
 h3,
-p {
+p,
+code {
   overflow-wrap: anywhere;
 }
 
@@ -657,11 +658,17 @@ a {
   max-width: 100%;
   padding: 6px 8px;
   background: var(--surface);
-  border: 1px solid #94a3b8;
+  border: 1px solid #64748b;
   border-radius: 4px;
   color: var(--text);
   font: inherit;
   font-size: 0.85rem;
+}
+
+.select:disabled {
+  background: #f1f5f9;
+  color: var(--secondary);
+  cursor: not-allowed;
 }
 
 .mapper-add-row {

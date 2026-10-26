@@ -101,12 +101,18 @@ export function startApp(root: HTMLElement): void {
   }
 
   function toggleMapper(requirementId: string): void {
+    if (busyAction !== null) {
+      return;
+    }
     openMapperId = openMapperId === requirementId ? null : requirementId;
     pendingFocus = `mapper-toggle-${requirementId}`;
     render();
   }
 
   function linkTest(requirementId: string, testId: string): void {
+    if (busyAction !== null) {
+      return;
+    }
     try {
       state = addMapping(state, requirementId, testId);
     } catch (caught) {
@@ -128,6 +134,9 @@ export function startApp(root: HTMLElement): void {
   }
 
   function unlinkTest(requirementId: string, testId: string): void {
+    if (busyAction !== null) {
+      return;
+    }
     state = removeMapping(state, requirementId, testId);
     error = null;
     exportFeedback = null;

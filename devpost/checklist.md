@@ -49,7 +49,7 @@ Build mode: fast
   Learner check: Export the sample report, inspect its metadata and counts, then change a link and confirm the next export reflects the new status.
   Commit: `Add JSON readiness export`
 
-- [ ] **5. Harden, document, and verify the complete demo**
+- [x] **5. Harden, document, and verify the complete demo**
   Becomes usable: The full journey is accessible and responsive, failure and loading states are clear, the README explains setup/demo/tests/schema/limitations, the project has an open-source license, and the verified demo can be repeated reliably.
   Why now: Documentation and accessibility need the finished behavior; this is the last slice before the learner’s final kick-the-tires review.
   PRD ref: `prd.md > States and Boundaries` (accessibility, session-only); `prd.md > Look and Feel`; `prd.md > What We're Building`; `prd.md > Non-Goals`
