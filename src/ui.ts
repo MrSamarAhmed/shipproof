@@ -6,13 +6,16 @@ import type {
   Status,
 } from './model';
 
+export type BusyAction = 'sample' | 'import';
+
 export interface DashboardOptions {
   readonly state: AppState;
   readonly ledger: Ledger;
   readonly error: string | null;
-  readonly busy: boolean;
+  readonly busyAction: BusyAction | null;
   readonly projectName: string;
   readonly onLoadSample: () => void;
+  readonly onImportFile: (file: File) => void;
 }
 
 interface ElementOptions {
@@ -26,8 +29,14 @@ export function renderDashboard(root: HTMLElement, options: DashboardOptions): v
 
   const shell = element('div', { className: 'shell' });
   shell.append(
-    buildHeader(options.state, options.busy, options.projectName, options.onLoadSample),
-    buildMain(options.state, options.ledger, options.error),
+    buildHeader(
+      options.state,
+      options.busyAction,
+      options.projectName,
+      options.onLoadSample,
+      options.onImportFile,
+    ),
+    buildMain(options.state, options.ledger, options.error, options.busyAction),
     buildFooter(),
   );
   root.append(shell);
@@ -35,9 +44,10 @@ export function renderDashboard(root: HTMLElement, options: DashboardOptions): v
 
 function buildHeader(
   state: AppState,
-  busy: boolean,
+  busyAction: BusyAction | null,
   projectName: string,
   onLoadSample: () => void,
+  onImportFile: (file: File) => void,
 ): HTMLElement {
   const header = element('header', { className: 'site-header' });
   const brand = element('div', { className: 'brand' }, [
@@ -51,19 +61,48 @@ function buildHeader(
 
   header.append(brand, project, buildSource(state));
 
+  const actions = element('div', { className: 'header-actions' });
+
   if (state.evidence === null) {
-    const actions = element('div', { className: 'header-actions' });
-    const button = element('button', {
+    const sampleButton = element('button', {
       className: 'button primary',
-      text: busy ? 'Loading sample…' : 'Load sample evidence',
+      text: busyAction === 'sample' ? 'Loading sample…' : 'Load sample evidence',
       attrs: { type: 'button' },
     });
-    button.disabled = busy;
-    button.addEventListener('click', onLoadSample);
-    actions.append(button);
-    header.append(actions);
+    sampleButton.disabled = busyAction !== null;
+    sampleButton.addEventListener('click', onLoadSample);
+    actions.append(sampleButton);
   }
 
+  const fileInput = element('input', {
+    className: 'sr-only file-input',
+    attrs: {
+      type: 'file',
+      accept: '.xml,application/xml,text/xml',
+    },
+  });
+  fileInput.disabled = busyAction !== null;
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (file !== undefined) {
+      onImportFile(file);
+    }
+  });
+
+  const fileLabel = element(
+    'label',
+    {
+      className: `button secondary file-button${busyAction === 'import' ? ' is-busy' : ''}${busyAction !== null ? ' is-disabled' : ''}`,
+      text: busyAction === 'import' ? 'Validating report…' : 'Import JUnit XML',
+    },
+    [fileInput],
+  );
+  if (busyAction !== null) {
+    fileLabel.setAttribute('aria-disabled', 'true');
+  }
+  actions.append(fileLabel);
+
+  header.append(actions);
   return header;
 }
 
@@ -94,11 +133,19 @@ function buildSource(state: AppState): HTMLElement {
   return block;
 }
 
-function buildMain(state: AppState, ledger: Ledger, error: string | null): HTMLElement {
+function buildMain(
+  state: AppState,
+  ledger: Ledger,
+  error: string | null,
+  busyAction: BusyAction | null,
+): HTMLElement {
   const main = element('main', { className: 'main' });
   const section = element('section', {
     className: 'panel ledger',
-    attrs: { 'aria-labelledby': 'ledger-heading' },
+    attrs: {
+      'aria-labelledby': 'ledger-heading',
+      'aria-busy': busyAction !== null ? 'true' : 'false',
+    },
   });
 
   const heading = element('div', { className: 'panel-heading' }, [
@@ -113,9 +160,21 @@ function buildMain(state: AppState, ledger: Ledger, error: string | null): HTMLE
   ]);
   section.append(heading);
 
+  if (busyAction !== null) {
+    section.append(
+      element('p', {
+        className: 'loading-note',
+        text:
+          busyAction === 'sample'
+            ? 'Loading the bundled synthetic report…'
+            : 'Reading and validating the selected JUnit XML report. The current evidence remains visible until the whole report is accepted.',
+      }),
+    );
+  }
+
   if (error !== null) {
     section.append(
-      element('div', { className: 'alert', attrs: { role: 'alert' } }, [
+      element('div', { className: 'alert', attrs: { role: 'alert', tabindex: '-1' } }, [
         element('strong', { text: 'Import error: ' }),
         error,
       ]),

@@ -186,7 +186,9 @@ a {
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 8px;
 }
 
 .button {
@@ -210,9 +212,44 @@ a {
   border-color: var(--action-hover);
 }
 
+.button.secondary {
+  background: var(--surface);
+  border: 1px solid var(--action);
+  color: var(--action);
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: #eef3f9;
+}
+
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-button:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.file-button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.loading-note {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  background: #eef3f9;
+  border-left: 3px solid var(--action);
+  color: var(--text);
+  font-size: 0.85rem;
 }
 
 .main {

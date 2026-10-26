@@ -9,7 +9,7 @@ Build mode: fast
 
 ## Slices
 
-- [ ] **1. Load the synthetic sample and see the honest ledger**
+- [x] **1. Load the synthetic sample and see the honest ledger**
   Becomes usable: A running ShipProof opens to the three authentication requirements in the empty state, and **Load sample evidence** produces one VERIFIED, one FAILED, and one UNVERIFIED requirement with the failing message and the REQ-003 gap visible.
   Why now: Bootstraps the app and delivers the unique kernel plus the central demo moment before supporting interactions; every later slice lands on this ledger.
   PRD ref: `prd.md > The Core Journey` (steps 1–4, 6, 9); `prd.md > Bundled sample project and empty state`; `prd.md > Loading synthetic sample evidence`; `prd.md > Reading the evidence dashboard`; `prd.md > Readiness status rules`
@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Open the app, confirm the three requirements are UNVERIFIED before evidence, load the sample, and say whether REQ-003 remains clearly unverified despite the passing checks elsewhere.
   Commit: `Build sample evidence dashboard`
 
-- [ ] **2. Import a JUnit XML report without losing the last good evidence**
+- [x] **2. Import a JUnit XML report without losing the last good evidence**
   Becomes usable: A user can import a local JUnit XML report, see its filename and imported-source label, inspect PASS/FAIL/SKIPPED/ERROR evidence, and keep the previous valid state when the file is malformed, empty, unsupported, oversized, or ambiguous.
   Why now: This is the second evidence path and the highest parser/validation risk; finding it early lets the remaining mapper and export work build on real imported state.
   PRD ref: `prd.md > Importing JUnit XML evidence`; `prd.md > States and Boundaries`; `prd.md > Required Verification` (5–7, 10–12)

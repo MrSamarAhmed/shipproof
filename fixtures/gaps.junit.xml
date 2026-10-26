@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Synthetic evidence gaps" tests="3" failures="0" errors="1" skipped="1">
+  <properties>
+    <property name="shipproof.synthetic" value="true"/>
+  </properties>
+  <testcase name="test_valid_credentials_succeed"/>
+  <testcase name="test_rate_limit_skipped">
+    <skipped message="Synthetic fixture: rate-limit integration environment not available."/>
+  </testcase>
+  <testcase name="test_session_store_errors">
+    <error message="Synthetic fixture: session store connection refused.">ConnectionError: synthetic session store unavailable.</error>
+  </testcase>
+</testsuite>

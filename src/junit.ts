@@ -12,7 +12,7 @@ export class JUnitImportError extends Error {
   }
 }
 
-const MAX_XML_BYTES = 1024 * 1024;
+export const MAX_JUNIT_BYTES = 1024 * 1024;
 const MAX_TEST_CASES = 1_000;
 const TESTCASE_METADATA = new Set(['properties', 'system-out', 'system-err']);
 
@@ -21,7 +21,7 @@ export function parseJUnitReport(xmlText: string): ParsedJUnitReport {
   if (text.length === 0) {
     throw new JUnitImportError('The report is empty.');
   }
-  if (new TextEncoder().encode(text).byteLength > MAX_XML_BYTES) {
+  if (new TextEncoder().encode(text).byteLength > MAX_JUNIT_BYTES) {
     throw new JUnitImportError(
       'The report is larger than 1 MiB. ShipProof only accepts small reports for this demo.',
     );
