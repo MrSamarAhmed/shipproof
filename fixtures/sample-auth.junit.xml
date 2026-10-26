@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Synthetic authentication checks" tests="2" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="shipproof.synthetic" value="true"/>
+  </properties>
+  <testcase name="test_valid_credentials_succeed"/>
+  <testcase name="test_invalid_credentials_rejected">
+    <failure message="Synthetic fixture: expected HTTP 401 for invalid credentials; observed HTTP 200.">AssertionError: expected response status 401, received 200. This result is fictional and was not produced by a real test run.</failure>
+  </testcase>
+</testsuite>

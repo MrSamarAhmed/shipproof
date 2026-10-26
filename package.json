@@ -1,0 +1,20 @@
+{
+  "name": "shipproof",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Evidence ledger that maps explicit requirements to JUnit test evidence.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}
