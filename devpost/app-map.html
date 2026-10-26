@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipProof — App Map</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #0f172a;
+    --muted: #475569;
+    --rule: #cbd5e1;
+    --panel: #f8fafc;
+    --navy: #1e3a5f;
+    --green: #166534;
+    --red: #991b1b;
+    --amber: #92400e;
+    --focus: #1d4ed8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #ffffff;
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+  }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.2rem; margin: 40px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--rule); }
+  h3 { font-size: 1rem; margin: 22px 0 6px; }
+  p, li { color: var(--ink); }
+  .lede { color: var(--muted); margin: 0 0 24px; }
+  .meta { color: var(--muted); font-size: 0.88rem; }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+  pre {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+  .cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 16px 0; }
+  .card { border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; background: var(--panel); }
+  .card h3 { margin: 0 0 4px; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+  .diagram { border: 1px solid var(--rule); border-radius: 6px; padding: 12px; background: #ffffff; overflow-x: auto; }
+  .diagram:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  svg { display: block; min-width: 720px; width: 100%; height: auto; }
+  .stop { border-left: 4px solid var(--navy); padding: 4px 0 4px 14px; margin: 18px 0; }
+  .stop h3 { margin: 0 0 2px; }
+  .stop .where { color: var(--muted); font-size: 0.88rem; margin: 0 0 6px; }
+  .stop p { margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--rule); }
+  th { background: var(--panel); font-size: 0.9rem; }
+  td { font-size: 0.94rem; }
+  details { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; margin: 10px 0; background: var(--panel); }
+  summary { cursor: pointer; font-weight: 600; }
+  summary:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .status { font-weight: 700; white-space: nowrap; }
+  .verified { color: var(--green); }
+  .failed { color: var(--red); }
+  .unverified { color: var(--amber); }
+  .note { background: var(--panel); border-left: 4px solid var(--navy); padding: 10px 14px; margin: 16px 0; }
+  footer { margin-top: 40px; border-top: 1px solid var(--rule); padding-top: 14px; color: var(--muted); font-size: 0.88rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ShipProof — App Map</h1>
+  <p class="lede">A reference map of the proof-of-concept as built: one real action followed from the screen to the code that computes the result.</p>
+  <p class="meta">Snapshot: commit <code>42bc8cf</code> · generated 2026-10-26 · offline document, no scripts</p>
+
+  <h2>What the app is</h2>
+  <p>ShipProof is an evidence ledger for a small software project. It lists explicit requirements, lets you link each requirement to named JUnit tests, and reports the requirement as <strong>VERIFIED</strong>, <strong>FAILED</strong>, or <strong>UNVERIFIED</strong> from the observed test outcomes. A passing test is treated as narrow evidence, never as proof the whole feature works.</p>
+  <div class="cards">
+    <div class="card">
+      <h3>Requirements and mappings</h3>
+      <p>Three fixed sample requirements and explicit requirement-to-test links. Links survive report imports; a link whose test disappears becomes <strong>MISSING</strong>.</p>
+    </div>
+    <div class="card">
+      <h3>Evidence</h3>
+      <p>A conservative JUnit XML reader in the browser. No network, backend, account, or AI judgment. The bundled sample is declared synthetic.</p>
+    </div>
+    <div class="card">
+      <h3>Evaluation</h3>
+      <p>One pure function applies the verification rule: any linked failure means FAILED; all linked checks must pass for VERIFIED; everything else is UNVERIFIED.</p>
+    </div>
+    <div class="card">
+      <h3>Output</h3>
+      <p>A deterministic JSON readiness report built from the same evaluation the dashboard shows, plus visible explanations and gaps.</p>
+    </div>
+  </div>
+
+  <h2>One action, end to end</h2>
+  <p>“Load sample evidence” is the shortest full path through the app: a click becomes parsed test results, an evaluated ledger, and the visible <strong>1 verified / 1 failed / 1 unverified</strong> summary.</p>
+
+  <div class="diagram" role="group" aria-label="Diagram: data flow from the Load sample button to the evaluated ledger. Scroll horizontally if needed." tabindex="0">
+    <svg viewBox="0 0 900 300" role="img" aria-labelledby="diagram-title diagram-desc">
+      <title id="diagram-title">Data flow for loading the sample evidence</title>
+      <desc id="diagram-desc">The user clicks Load sample evidence. src/ui.ts buildHeader sends the click to src/main.ts loadSample. loadSample passes bundled XML to src/junit.ts parseJUnitReport, then src/state.ts replaceEvidence stores the evidence, src/domain.ts evaluateLedger computes statuses, and src/ui.ts renders the summary and requirement rows.</desc>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e3a5f"></path>
+        </marker>
+      </defs>
+      <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13">
+        <rect x="10" y="118" width="120" height="64" rx="5" fill="#f8fafc" stroke="#1e3a5f" stroke-width="1.5"></rect>
+        <text x="70" y="142" text-anchor="middle" fill="#0f172a" font-weight="700">User clicks</text>
+        <text x="70" y="161" text-anchor="middle" fill="#475569">Load sample</text>
+
+        <line x1="132" y1="150" x2="168" y2="150" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"></line>
+
+        <rect x="170" y="118" width="132" height="64" rx="5" fill="#f8fafc" stroke="#64748b"></rect>
+        <text x="236" y="140" text-anchor="middle" fill="#0f172a" font-weight="700">ui.ts</text>
+        <text x="236" y="158" text-anchor="middle" fill="#475569">buildHeader</text>
+        <text x="236" y="173" text-anchor="middle" fill="#64748b" font-size="11">onLoadSample</text>
+
+        <line x1="304" y1="150" x2="340" y2="150" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"></line>
+
+        <rect x="342" y="118" width="132" height="64" rx="5" fill="#f8fafc" stroke="#64748b"></rect>
+        <text x="408" y="140" text-anchor="middle" fill="#0f172a" font-weight="700">main.ts</text>
+        <text x="408" y="158" text-anchor="middle" fill="#475569">loadSample</text>
+        <text x="408" y="173" text-anchor="middle" fill="#64748b" font-size="11">busy → parse → render</text>
+
+        <line x1="476" y1="150" x2="512" y2="150" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"></line>
+
+        <rect x="514" y="102" width="150" height="50" rx="5" fill="#f8fafc" stroke="#64748b"></rect>
+        <text x="589" y="122" text-anchor="middle" fill="#0f172a" font-weight="700">junit.ts</text>
+        <text x="589" y="139" text-anchor="middle" fill="#475569">parseJUnitReport</text>
+        <rect x="514" y="162" width="150" height="50" rx="5" fill="#f8fafc" stroke="#64748b"></rect>
+        <text x="589" y="182" text-anchor="middle" fill="#0f172a" font-weight="700">state.ts</text>
+        <text x="589" y="199" text-anchor="middle" fill="#475569">replaceEvidence</text>
+
+        <line x1="666" y1="150" x2="702" y2="150" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arrow)"></line>
+
+        <rect x="704" y="102" width="186" height="50" rx="5" fill="#eef2f7" stroke="#1e3a5f" stroke-width="1.5"></rect>
+        <text x="797" y="122" text-anchor="middle" fill="#0f172a" font-weight="700">domain.ts</text>
+        <text x="797" y="139" text-anchor="middle" fill="#475569">evaluateLedger → statusFor</text>
+        <rect x="704" y="162" width="186" height="50" rx="5" fill="#f8fafc" stroke="#64748b"></rect>
+        <text x="797" y="182" text-anchor="middle" fill="#0f172a" font-weight="700">ui.ts</text>
+        <text x="797" y="199" text-anchor="middle" fill="#475569">renderDashboard</text>
+
+        <text x="450" y="255" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="700">Visible result: 1 VERIFIED · 1 FAILED · 1 UNVERIFIED</text>
+        <text x="450" y="275" text-anchor="middle" fill="#475569" font-size="12">REQ-003 has no linked test at all, so passing tests elsewhere in the report cannot verify it.</text>
+      </g>
+    </svg>
+  </div>
+
+  <p class="note">The same pure evaluator feeds the JSON export: <code>src/export.ts</code> calls <code>evaluateLedger(state)</code> and writes the resulting summary and per-requirement statuses. The screen and the downloaded report cannot disagree about a status unless the state changed between them.</p>
+
+  <h2>Reference route</h2>
+  <p><strong>Not a completed guided tour.</strong> This is a suggested 3-stop route for reading the code yourself. Each stop names a real file and a search anchor rather than a fragile line number.</p>
+
+  <div class="stop">
+    <h3>Stop 1 — Where the click starts</h3>
+    <p class="where"><code>src/ui.ts</code> · search <code>function buildHeader</code></p>
+    <p>The header renders the “Load sample evidence” button only while no evidence is loaded, wires its click to <code>onLoadSample</code>, and shows the import and export controls. The disabled export is explained by visible text, not color alone.</p>
+  </div>
+
+  <div class="stop">
+    <h3>Stop 2 — From click to stored evidence</h3>
+    <p class="where"><code>src/main.ts</code> · search <code>function loadSample</code></p>
+    <p>The controller sets a busy state, parses the bundled XML through <code>parseJUnitReport</code>, wraps the tests with an explicit synthetic source, and replaces the evidence. If parsing throws, the previous state is untouched and the error is rendered in an alert. <code>src/junit.ts</code> contains the conservative rules that reject malformed XML, namespaces, conflicting outcomes, and duplicates instead of guessing.</p>
+  </div>
+
+  <div class="stop">
+    <h3>Stop 3 — Where a status is decided</h3>
+    <p class="where"><code>src/domain.ts</code> · search <code>function statusFor</code></p>
+    <p>This is the whole verification rule. A present <code>FAIL</code> wins, an empty check list is UNVERIFIED, all <code>PASS</code> is VERIFIED, and anything else — <code>MISSING</code>, <code>SKIPPED</code>, <code>ERROR</code> — falls through to UNVERIFIED. The requirement rows and summary above are built from this result, and <code>tests/domain.test.ts</code> pins the combinations.</p>
+  </div>
+
+  <details>
+    <summary>Show the evaluation core</summary>
+    <pre><code>function statusFor(checks: readonly CheckDetail[]): Status {
+  if (checks.some((check) =&gt; check.outcome === 'FAIL')) {
+    return 'FAILED';
+  }
+  if (checks.length === 0) {
+    return 'UNVERIFIED';
+  }
+  if (checks.every((check) =&gt; check.outcome === 'PASS')) {
+    return 'VERIFIED';
+  }
+  return 'UNVERIFIED';
+}</code></pre>
+    <p class="meta">Excerpt from <code>src/domain.ts</code> at commit <code>42bc8cf</code>. Comments and surrounding helpers omitted.</p>
+  </details>
+
+  <h2>To change this, start here</h2>
+  <table>
+    <thead>
+      <tr><th>If you want to…</th><th>Start at</th><th>Then check</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Change the verification rule</td>
+        <td><code>src/domain.ts</code> · <code>statusFor</code></td>
+        <td><code>tests/domain.test.ts</code>; the export and UI both follow automatically.</td>
+      </tr>
+      <tr>
+        <td>Accept more JUnit XML shapes</td>
+        <td><code>src/junit.ts</code> · <code>parseJUnitReport</code></td>
+        <td><code>tests/junit.test.ts</code> and the rejection messages users see.</td>
+      </tr>
+      <tr>
+        <td>Change how links are added or removed</td>
+        <td><code>src/state.ts</code> · <code>addMapping</code> / <code>removeMapping</code></td>
+        <td><code>tests/state.test.ts</code> and <code>src/ui.ts</code> · <code>buildMapper</code>.</td>
+      </tr>
+      <tr>
+        <td>Change the downloadable report</td>
+        <td><code>src/export.ts</code> · <code>buildReadinessReport</code></td>
+        <td><code>tests/export.test.ts</code>; bump <code>SCHEMA_VERSION</code> if the shape changes.</td>
+      </tr>
+      <tr>
+        <td>Use different sample requirements or evidence</td>
+        <td><code>src/sample.ts</code> and <code>fixtures/sample-auth.junit.xml</code></td>
+        <td><code>fixtures/</code> also holds all-pass, gaps, and malformed examples used in tests.</td>
+      </tr>
+      <tr>
+        <td>Adjust the visual design or layout</td>
+        <td><code>src/styles.css</code></td>
+        <td>Keep status understandable without color and preserve visible focus.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>A practice to reuse</h2>
+  <p>The reusable move is turning a vague completion claim into one deterministic predicate, then testing the evidence combinations that could make it lie.</p>
+  <p>In this project the claim “this requirement is verified” became the predicate <code>all linked checks pass</code>, written once in <code>statusFor</code> and exercised in <code>tests/domain.test.ts</code>. The bundled sample makes the payoff visible: REQ-003's linked evidence simply does not exist, so a report full of passing tests still shows <span class="status unverified">UNVERIFIED</span>. On another project, the same approach works for “done,” “safe to merge,” or “ready to ship”: name the observable evidence, define the rule in one place, and add the cases where missing or inconclusive evidence could otherwise be read as success.</p>
+
+  <h2>Run it again</h2>
+  <pre><code>npm ci
+npm run dev      # http://127.0.0.1:5173
+npm test         # engine, parser, mappings, export, UI
+npm run build    # typecheck and production bundle</code></pre>
+  <p>Node 24 and npm are required. The app uses no API keys and makes no network requests at runtime; the sample is bundled.</p>
+
+  <footer>
+    <p>Snapshot of commit <code>42bc8cf</code>, generated 2026-10-26. This map can drift: if code moves, verify paths and search anchors against the working tree. The document is static and offline; essential content needs no scripts.</p>
+  </footer>
+</main>
+</body>
+</html>

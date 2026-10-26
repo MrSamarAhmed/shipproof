@@ -62,7 +62,7 @@ Build mode: fast
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 2: sample evidence, real JUnit import, and malformed-import preservation; learner feedback recorded and resolved.
-- [ ] Final kick-the-tires exploration and feedback completed — after slice 5: complete journey, README accuracy, and demo repeatability.
+- [x] Final kick-the-tires exploration and feedback completed — after slice 5: complete journey, README accuracy, and demo repeatability. Learner reported the final checkpoint complete and requested no product changes; current implementation retained.
 
 ## Final Review
 
@@ -75,18 +75,19 @@ Build mode: fast
   - Keyboard: skip link → sample button → file input → wrap; visible 3px focus rings; skip link focused `#app`. Disabled export is skipped.
   - Widths: 516 px and a 390 px iframe had no horizontal overflow; a 1200 px iframe used the desktop layout with status labels beside titles. Mapper controls stack at 390 px.
   - Actual download: `~/Downloads/shipproof-readiness-report.json` (2,914 bytes) parsed as valid schema `1.0` JSON with source `synthetic-sample`, filename `sample-auth.junit.xml`, counts 1/1/1, and requirement statuses matching the dashboard at download time. After removing REQ-001's passing link, the in-browser generated Blob payload was parsed and matched the changed dashboard counts 0/1/2; the automation did not observe a second file save.
-- [ ] Final review complete — feedback resolved and learner confirms ready to ship
+- [x] Final review complete — feedback resolved and learner confirms ready to ship (learner declined further changes and directed the workflow to shipping preparation).
+  - Post-wrap-up regression at source commit `42bc8cf` plus the new app map and checklist entries: `npm test` = 5 files, 68 tests passed; `npm run typecheck` passed with no output; `npm run build` passed with `dist/index.html`, `dist/assets/index-DgFwRlpK.css`, `dist/assets/index-BePFH92e.js`.
 
 ## Code Tour and App Map
 
-- [ ] Learning activity complete — focused alternative for a familiar plan-first learner, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] Learning activity complete — focused alternative for a familiar plan-first learner, or brief recap
+- [x] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: pending
-Route and stops: pending
-Edit outcome: pending
-Reflection: pending
-Activity mode: pending
+Activity and evidence: focused recap for a plan-first learner, not a new guided tour. Traced one verification decision: the `all-linked-checks-pass` rule in `src/domain.ts` (`statusFor`), the outcome combinations pinned in `tests/domain.test.ts`, and the observed sample result (1 VERIFIED / 1 FAILED / 1 UNVERIFIED) where REQ-003 stays UNVERIFIED because it has no linked evidence while other tests pass.
+Route and stops: reference route only (not toured interactively). Stops: `src/ui.ts` `buildHeader` → `src/main.ts` `loadSample` → `src/domain.ts` `statusFor`; recorded with "to change this, start here" pointers in `devpost/app-map.html`.
+Edit outcome: not offered; the learner requested no unnecessary product changes at the final checkpoint, so no edit was made.
+Reflection: already covered during planning in the learner's own statements about letting requirements and test results, not the AI, decide status. No new personal reflection was solicited or invented.
+Activity mode: focused recap plus offline app map.
 
 ## Revisions
